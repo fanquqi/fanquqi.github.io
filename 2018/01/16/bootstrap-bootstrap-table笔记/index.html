@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="之前组内是有一款manager工具的，用来展示一下报表或者报警状态，使用到的技术栈是Django+EasyUI,但是EasyUI的界面UI真的是很easy,简直easy到是上世纪的既视感。有的大神可能会说你可以改下EasyUI的样式表啊。在我看来一个运维搞这个可能成本有点高，最关键是搞出来有可能不好看，有非常大的可能。。。 最关键是我们之前那个manager的Django代码没有用到ORM使用起来">
+<meta property="og:type" content="article">
+<meta property="og:title" content="bootstrap-bootstrap-table笔记">
+<meta property="og:url" content="https://fanquqi.github.io/2018/01/16/bootstrap-bootstrap-table%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="之前组内是有一款manager工具的，用来展示一下报表或者报警状态，使用到的技术栈是Django+EasyUI,但是EasyUI的界面UI真的是很easy,简直easy到是上世纪的既视感。有的大神可能会说你可以改下EasyUI的样式表啊。在我看来一个运维搞这个可能成本有点高，最关键是搞出来有可能不好看，有非常大的可能。。。 最关键是我们之前那个manager的Django代码没有用到ORM使用起来">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15166031572156.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15165911659820.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15165923280106.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15165934361985.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15165939077872.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15166009956222.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15165999679602.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15166014970679.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15166118776986.jpg">
+<meta property="article:published_time" content="2018-01-16T08:33:11.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.986Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="bootstrap-table">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/15166031572156.jpg">
+
+<link rel="canonical" href="https://fanquqi.github.io/2018/01/16/bootstrap-bootstrap-table%E7%AC%94%E8%AE%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>bootstrap-bootstrap-table笔记 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2018/01/16/bootstrap-bootstrap-table%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          bootstrap-bootstrap-table笔记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-01-16 16:33:11" itemprop="dateCreated datePublished" datetime="2018-01-16T16:33:11+08:00">2018-01-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index"><span itemprop="name">前端</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>之前组内是有一款manager工具的，用来展示一下报表或者报警状态，使用到的技术栈是<code>Django</code>+<code>EasyUI</code>,但是EasyUI的界面UI真的是很easy,简直easy到是上世纪的既视感。有的大神可能会说你可以改下EasyUI的样式表啊。在我看来一个运维搞这个可能成本有点高，最关键是搞出来有可能不好看，有非常大的可能。。。</p>
+<p>最关键是我们之前那个manager的Django代码没有用到ORM使用起来总感觉不是特别方便。冗余代码有点多。种种原因，我组决定新搞一套与之前那个独立出来，感谢领导对我任性的容忍，以及能力的信任。。</p>
+<p>我的前端结构是bootstrap+bootatrap-table 来代替EasyUI。这个过程也是有点曲折，一直摸索着前进。因为之前不懂前端代码（但是HTML，CSS还是懂一点），而且我不想写的太low，影响名声。所以前期经常是写出来之后发现更好的方法，然后推倒重来。。。也用到很多demo。反正这次开发是后端精力占了10%-20%,前端占到其余。</p>
+<p>以下是用到的前端技术，及其官方文档记录。</p>
+<ul>
+<li>bootstrap: <a href="https://bootsnipp.com">demo</a>，Twitter开源的前端框架，非常好用，也非常火，衍生出很多有些的框架</li>
+<li>bootstrap-table: <a href="http://bootstrap-table.wenzhixin.net.cn/zh-cn/documentation/#%E8%A1%A8%E6%A0%BC%E5%8F%82%E6%95%B0">文档</a>，是一个基于bootstrap样式的表格框架。由国人自己（@wenzhixin）开发，相比于使用人数很多的jQuery-EasyUI，界面更现代一点，排版更好看一点，已封装好的功能不如EasyUI丰富，但基本功能都具备。</li>
+<li>datetimepicker: <a href="https://eonasdan.github.io/bootstrap-datetimepicker/">时间选择器</a>，一个时间选择器。</li>
+<li>bootstrap-select: <a href="https://silviomoreto.github.io/bootstrap-select/examples/">demo</a></li>
+</ul>
+<h2 id="bootstrap"><a href="#bootstrap" class="headerlink" title="bootstrap"></a>bootstrap</h2><p>整个base.html 用到的是bootstrap的一个demo，自己稍作修改。没有遇到困难。<br>关于bootstrap的栅格系统，有兴趣可以看下。</p>
+<h2 id="bootstrap-table"><a href="#bootstrap-table" class="headerlink" title="bootstrap-table"></a>bootstrap-table</h2><p><code>bootstrap-table</code>就是这次项目最核心的技术了。它很类似<code>EasyUI</code>，整体的样式是基于<code>bootstrap</code>的,所以两个东西一起用界面非常友好。但是bug还是有一点。很多功能用法很像，但是又有些不同，毕竟EasyUI久经考验，我先是把它的<code>examples</code>全部看了一遍。了解了基本的用法功能。然后对应自己的场景套用。下面根据几个需求说一下我的解决办法。</p>
+<h3 id="数据传入"><a href="#数据传入" class="headerlink" title="数据传入"></a>数据传入</h3><p>数据传入到<code>bootstrap-table</code>有从前端角度来讲，两种方式</p>
+<ol>
+<li>后端直接将<code>data</code>数据渲染<code>{data: data_list}</code>到页面，然后通过JS <img src="http://or2jd66dq.bkt.clouddn.com/15166031572156.jpg" alt=""><br>的方法赋予到变量。注意数据格式是<code>[{id: 1, name: &quot;jordan&quot;}, [id: 2, name: &quot;kobe&quot;]</code> 这样一个列表的形式，然后在<code>bootstrap-table</code>中指定<code>date: $row_list</code>即可。<br><img src="http://or2jd66dq.bkt.clouddn.com/15165911659820.jpg" alt=""></li>
+</ol>
+<ol start="2">
+<li>直接在<code>bootstrap-table</code>中指定<code>url</code>,<code>method</code>,<code>queryParams</code>,<code>ajaxOptions</code> 通过调用<code>ajax</code>直接获取数据。<br><img src="http://or2jd66dq.bkt.clouddn.com/15165923280106.jpg" alt=""></li>
+</ol>
+<h3 id="父子表格实现"><a href="#父子表格实现" class="headerlink" title="父子表格实现"></a>父子表格实现</h3><p><a href="http://issues.wenzhixin.net.cn/bootstrap-table/#options/detail-view.html">Detail View</a><br><a href="http://issues.wenzhixin.net.cn/bootstrap-table/#options/sub-table.html">onExpandRow </a></p>
+<p>官方给的实例叫<code>Detail View</code>是➕点击动作，<code>onExpandRow</code>是点击➕出发的函数。<br>我希望用<code>onExpandRow</code>来调用一次ajax，返回后台数据。<br>注意：<br><code>onExpandRow</code>后面跟的函数必须带有 (index, row, $detail) 这三个参数。<br><code>queryParams</code> 和 <code>ajaxOptions</code> 是url请求的参数。可以不写，可以为空根据实际情况。<br>代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;</span><br><span class="line"></span><br><span class="line">    var $table&#x3D;$(&#39;#table&#39;);</span><br><span class="line"></span><br><span class="line">        $table.bootstrapTable(&#123;</span><br><span class="line">            detailView: true,</span><br><span class="line">            columns: [&#123;</span><br><span class="line">                title: &quot;Topic&quot;,</span><br><span class="line">                field: &quot;topic&quot;,</span><br><span class="line">                sortable: &quot;true&quot;</span><br><span class="line"></span><br><span class="line">            &#125;,&#123;</span><br><span class="line">                title: &quot;集群名&quot;,</span><br><span class="line">                field: &quot;cluster&quot;,</span><br><span class="line">                sortable: &quot;true&quot;</span><br><span class="line">            &#125;,&#123;</span><br><span class="line">                title: &quot;状态&quot;,</span><br><span class="line">                field: &quot;topic_state&quot;,</span><br><span class="line">                sortable: &quot;true&quot;,</span><br><span class="line">                align: &quot;center&quot;,</span><br><span class="line">                searchable: &quot;true&quot;</span><br><span class="line">            &#125;,&#123;</span><br><span class="line">                title: &quot;日志地址&quot;,</span><br><span class="line">                field: &quot;log_path&quot;,</span><br><span class="line"></span><br><span class="line">            &#125;,],</span><br><span class="line">            data: $rows,</span><br><span class="line">            onExpandRow: function (index, row, $detail) &#123;</span><br><span class="line">                InitSubTable(index, row, $detail);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">    function InitSubTable(index, row, $detail) &#123;</span><br><span class="line">        var row_cluster&#x3D;row.cluster,</span><br><span class="line">            row_topic&#x3D;row.topic;</span><br><span class="line"></span><br><span class="line">        var rowsdate&#x3D;$(&quot;#datetimepicker1&quot;).find(&quot;input&quot;).val();</span><br><span class="line">        var cur_table &#x3D; $detail.html(&#39;&lt;table&gt;&lt;&#x2F;table&gt;&#39;).find(&#39;table&#39;);</span><br><span class="line"></span><br><span class="line">        $(cur_table).bootstrapTable(&#123;</span><br><span class="line">            url: &#39;&#x2F;url_detail&#39;,</span><br><span class="line">            method: &#39;get&#39;,</span><br><span class="line">            queryParams: &#123;cluster: row_cluster, topic: row_topic, date: rowsdate&#125;,</span><br><span class="line">            ajaxOptions: &#123;cluster: row_cluster, topic: row_topic, date: rowsdate&#125;,</span><br><span class="line">            columns: [&#123;</span><br><span class="line">                field: &quot;state&quot;,</span><br><span class="line">                title: &quot;状态&quot;,</span><br><span class="line">                sortable: &quot;true&quot;</span><br><span class="line">            &#125;, &#123;</span><br><span class="line">                field: &quot;hostname&quot;,</span><br><span class="line">                title: &quot;机器名&quot;,</span><br><span class="line">                sortable: &quot;true&quot;</span><br><span class="line">            &#125;, &#123;</span><br><span class="line">                field: &quot;date&quot;,</span><br><span class="line">                title: &quot;日期&quot;</span><br><span class="line">           &#125;]</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>效果<br><img src="http://or2jd66dq.bkt.clouddn.com/15165934361985.jpg" alt=""></p>
+<h3 id="字段Formatter以及cellStyle"><a href="#字段Formatter以及cellStyle" class="headerlink" title="字段Formatter以及cellStyle"></a>字段Formatter以及cellStyle</h3><p>定义函数<br>函数中三个参数也是必须的</p>
+<ol>
+<li>状态标签格式化</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">function statusFormatter(value, row, index) &#123;</span><br><span class="line">   if (value &#x3D;&#x3D;&#x3D; 1) &#123;</span><br><span class="line">     return &#39;&lt;span class&#x3D;&quot;label label-success&quot;&gt;正常&lt;&#x2F;span&gt;&#39;;</span><br><span class="line">   &#125; else if (value &#x3D;&#x3D;&#x3D; 0) &#123;</span><br><span class="line">     return &#39;&lt;span class&#x3D;&quot;label label-danger&quot;&gt;异常&lt;&#x2F;span&gt;&#39;;</span><br><span class="line">   &#125; else if (value &#x3D;&#x3D;&#x3D; 2) &#123;</span><br><span class="line">       return &#39;&lt;span class&#x3D;&quot;label label-default&quot;&gt;不存在&lt;&#x2F;span&gt;&#39;;</span><br><span class="line">   &#125; else if (value &#x3D;&#x3D;&#x3D; 3) &#123;</span><br><span class="line">       return &#39;&lt;span class&#x3D;&quot;label label-info&quot;&gt;Miss&lt;&#x2F;span&gt;&#39;;</span><br><span class="line">   &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p><code>bootstrap-table</code>使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">$(cur_table).bootstrapTable(&#123;</span><br><span class="line">            ...</span><br><span class="line">            columns: [&#123;</span><br><span class="line">                field: &quot;state&quot;,</span><br><span class="line">                title: &quot;状态&quot;,</span><br><span class="line">                sortable: &quot;true&quot;,</span><br><span class="line">                formatter: &quot;statusFormatter&quot;</span><br><span class="line">            &#125;, &#123;</span><br><span class="line">                field: &quot;hostname&quot;,</span><br><span class="line">                title: &quot;机器名&quot;,</span><br><span class="line">                sortable: &quot;true&quot;</span><br><span class="line">            &#125;, &#123;</span><br><span class="line">                field: &quot;date&quot;,</span><br><span class="line">                title: &quot;日期&quot;</span><br><span class="line">           &#125;]</span><br><span class="line">           ...</span><br><span class="line">        &#125;);</span><br></pre></td></tr></table></figure>
+<p>效果：<br><img src="http://or2jd66dq.bkt.clouddn.com/15165939077872.jpg" alt=""></p>
+<ol start="2">
+<li>表格底色<code>cellSytle</code>格式化。</li>
+</ol>
+<p>函数代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">function cellStyle(value, row, index) &#123;</span><br><span class="line">    var classes &#x3D; [&#39;active&#39;, &#39;success&#39;, &#39;info&#39;, &#39;warning&#39;, &#39;danger&#39;];</span><br><span class="line">    if (value &gt; 1024*1024*1024*1024) &#123;</span><br><span class="line">        return &#123;</span><br><span class="line">            &quot;classes&quot;: classes[4]</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125; else if ( 1024*1024*1024 &lt; value &amp;&amp; value &lt; 1024*1024*1024*1024) &#123;</span><br><span class="line">        return &#123;</span><br><span class="line">            &quot;classes&quot;: classes[3]</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        return &#123;</span><br><span class="line">            &quot;classes&quot;: classes[1]</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>bootstrap-table 中引用类似formatter </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cellStyle: &quot;cellStyle&quot;</span><br></pre></td></tr></table></figure>
+
+
+<ol start="3">
+<li>流量数值格式化</li>
+</ol>
+<blockquote>
+<p>因为数据流量值参差不齐，有的日流量几T，有的只有几M，所以不能是制定统一的单位。</p>
+</blockquote>
+<p>函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">function formatSize(value,row,index,idx &#x3D; 0 ) &#123;</span><br><span class="line"></span><br><span class="line">    Number(value);</span><br><span class="line">    const units &#x3D; [&quot;B&quot;, &quot;KB&quot;, &quot;MB&quot;, &quot;GB&quot;, &quot;TB&quot;];</span><br><span class="line">    if (value &lt; 1024 || idx &#x3D;&#x3D;&#x3D; units.length - 1) &#123;</span><br><span class="line">        return value.toFixed(1) + units[idx];</span><br><span class="line">    &#125;</span><br><span class="line">    return formatSize(value &#x2F; 1024, row, index, ++idx);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>bootstrap使用formatter引用。</p>
+<p>2，3效果：如下图</p>
+<p><img src="http://or2jd66dq.bkt.clouddn.com/15166009956222.jpg" alt=""></p>
+<h3 id="bootstrap-table-refresh"><a href="#bootstrap-table-refresh" class="headerlink" title="bootstrap-table refresh"></a>bootstrap-table refresh</h3><p>如果不是父子表，而表头自己加了一些筛选条件的话，每次筛选条件改变，我们需要用refresh刷新表内的数据<br>最好写个判断，需要注意的是 <code>refresh</code> 的参数并不是第一次调用ajax的时候的<code>queryParams</code> 而是变成了<code>query</code>。。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">function init() &#123;</span><br><span class="line">    &#x2F;&#x2F; 获取&lt;input&gt;host</span><br><span class="line">    var host&#x3D;$(&quot;#hostname&quot;).val();</span><br><span class="line">    var $table &#x3D; $(&#39;#table1&#39;);</span><br><span class="line">    &#x2F;&#x2F; 判断如果表格存在，刷新表格</span><br><span class="line">    if($table.length) &#123;</span><br><span class="line">        console.log(&#39;refresh&#39;, host)</span><br><span class="line">        $table.bootstrapTable(&#39;refresh&#39;, &#123;</span><br><span class="line">            url: &#39;&#x2F;search_detail&#39;,</span><br><span class="line">            method: &#39;get&#39;,</span><br><span class="line">            query: &#123;hostname: host&#125;,</span><br><span class="line">        &#125;)</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        &#x2F;&#x2F; 构建table，放到&lt;div id&#x3D;&quot;mydiv&quot;&gt; 中</span><br><span class="line">        var mydiv &#x3D; document.getElementById(&quot;mydiv&quot;);</span><br><span class="line">        var tb &#x3D; document.createElement(&quot;table&quot;);</span><br><span class="line">        tb.id &#x3D; &quot;table1&quot;;</span><br><span class="line">        mydiv.append(tb)</span><br><span class="line"></span><br><span class="line">        $table &#x3D; $(&#39;#table1&#39;);</span><br><span class="line">        $table.bootstrapTable(&#123;</span><br><span class="line">            url: &#39;&#x2F;search_detail&#39;,</span><br><span class="line">            method: &#39;get&#39;,</span><br><span class="line">            queryParams: &#123;hostname: host&#125;,</span><br><span class="line">            ajaxOptions: &#123;hostname: host&#125;,</span><br><span class="line">            striped: true,</span><br><span class="line">            pagination: true,</span><br><span class="line">            pageSize: 10,</span><br><span class="line">            pageList: [10, 25, 50, 100],</span><br><span class="line">            search: true,</span><br><span class="line">            ...</span><br><span class="line">            ...</span><br></pre></td></tr></table></figure>
+
+<h2 id="bootstrap-timepicker-使用"><a href="#bootstrap-timepicker-使用" class="headerlink" title="bootstrap timepicker 使用"></a>bootstrap timepicker 使用</h2><blockquote>
+<p>一个时间选择插件，我们可以直接使用它来选择日期，然后用jQuery获取选择的数据，调用ajax的时候添加到参数之中。需要引入相关js,css,我这里省略了。具体官网介绍。</p>
+</blockquote>
+<p>代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&lt;div class&#x3D;&quot;col-sm-3&quot; style&#x3D;&quot;height:20px;&quot;&gt;</span><br><span class="line"></span><br><span class="line">        &lt;div class&#x3D;&#39;input-group date&#39; id&#x3D;&#39;datetimepicker1&#39;&gt;</span><br><span class="line">            &lt;input type&#x3D;&#39;text&#39; class&#x3D;&quot;form-control&quot; &gt;</span><br><span class="line">            &lt;span class&#x3D;&quot;input-group-addon&quot;&gt;</span><br><span class="line">                &lt;span class&#x3D;&quot;glyphicon glyphicon-calendar&quot;&gt;&lt;&#x2F;span&gt;</span><br><span class="line">            &lt;&#x2F;span&gt;</span><br><span class="line">        &lt;&#x2F;div&gt;</span><br><span class="line"></span><br><span class="line">&lt;&#x2F;div&gt;</span><br><span class="line">&lt;script type&#x3D;&quot;text&#x2F;javascript&quot;&gt;</span><br><span class="line">    $(function () &#123;</span><br><span class="line">        $(&#39;#datetimepicker1&#39;).datetimepicker(&#123;</span><br><span class="line">            viewMode: &#39;days&#39;,</span><br><span class="line">            format: &#39;YYYY-MM-DD&#39;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">&lt;&#x2F;script&gt;</span><br></pre></td></tr></table></figure>
+<p>然后jQuery用以下代码获取选择值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 根据div-id来寻找其中input 标签的选择值</span><br><span class="line">var rowsdate&#x3D;$(&quot;#datetimepicker1&quot;).find(&quot;input&quot;).val();</span><br></pre></td></tr></table></figure>
+<p>显示如图。<br><img src="http://or2jd66dq.bkt.clouddn.com/15165999679602.jpg" alt=""></p>
+<h2 id="bootstrap-select-input-button-输入框组"><a href="#bootstrap-select-input-button-输入框组" class="headerlink" title="bootstrap select input button 输入框组"></a>bootstrap select input button 输入框组</h2><blockquote>
+<p>顾名思义输入框组就是把两个或者几个输入框组合一下。其实上面datetimepicker 就是一个输入框组。但是那个demo是官方给的，而且在父子表中使用不用提交按钮，因为那个➕就代替了提交按钮。如果不是父子表我们需要在输入框后面加一个button。为了美观我选择把它们两个放到一块儿。</p>
+</blockquote>
+<p>使用到了栅格系统.注意其中几个div 之中class的作用<br>代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">&lt;div class&#x3D;&quot;container&quot;&gt;</span><br><span class="line">&lt;div class&#x3D;&quot;row&quot;&gt;</span><br><span class="line">    &lt;div class&#x3D;&#39;col-sm-3&#39;&gt;</span><br><span class="line">        &lt;div class&#x3D;&quot;input-group date pull-right&quot; id&#x3D;&quot;mydiv&quot;&gt;</span><br><span class="line">            &lt;input type&#x3D;&#39;text&#39; class&#x3D;&quot;form-control&quot; id&#x3D;&#39;datetimepicker4&#39; &#x2F;&gt;</span><br><span class="line">            &lt;div class&#x3D;&quot;input-group-btn&quot;&gt;</span><br><span class="line">                        &lt;span class&#x3D;&quot;input-group-btn&quot;&gt;</span><br><span class="line">                            &lt;button onclick&#x3D;&quot;init()&quot; class&#x3D;&quot;btn btn-default&quot; type&#x3D;&quot;button&quot;&gt;日期&lt;&#x2F;button&gt;</span><br><span class="line">                        &lt;&#x2F;span&gt;</span><br><span class="line">            &lt;&#x2F;div&gt;</span><br><span class="line">        &lt;&#x2F;div&gt;</span><br><span class="line">    &lt;&#x2F;div&gt;</span><br><span class="line"></span><br><span class="line">    &lt;script type&#x3D;&quot;text&#x2F;javascript&quot;&gt;</span><br><span class="line">        $(function () &#123;</span><br><span class="line">            $(&#39;#datetimepicker4&#39;).datetimepicker(&#123;</span><br><span class="line">                viewMode: &#39;days&#39;,</span><br><span class="line">                format: &#39;YYYY-MM-DD&#39;</span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        &#125;);</span><br><span class="line">    &lt;&#x2F;script&gt;</span><br><span class="line">&lt;&#x2F;div&gt;</span><br><span class="line">&lt;&#x2F;div&gt;</span><br></pre></td></tr></table></figure>
+
+<p>效果：<br>点击 白框 日期选择器会弹出来，后面的<code>日期</code>按钮即为提交按钮，点击触发刷新函数。<br><img src="http://or2jd66dq.bkt.clouddn.com/15166014970679.jpg" alt=""></p>
+<p>同理，下图也可以<br><img src="http://or2jd66dq.bkt.clouddn.com/15166118776986.jpg" alt=""></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>我只记录了自己花费时间解决的问题，其他可以直接在官方文档中看到的，比如sortable,分页，表内搜索啥的，这篇笔记就略过了，建议如果有根据我这篇文章动手做的同学先把<code>bootstrap-table</code>例子都大概看一遍。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/bootstrap-table/" rel="tag"># bootstrap-table</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/12/19/python%E9%98%B2%E6%AD%A2SQL%E6%B3%A8%E5%85%A5/" rel="prev" title="python防止SQL注入">
+      <i class="fa fa-chevron-left"></i> python防止SQL注入
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2018/03/20/tcpdump-wireshark%E6%8A%93%E5%8C%85%E5%88%86%E6%9E%90/" rel="next" title="tcpdump+wireshark抓包分析">
+      tcpdump+wireshark抓包分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#bootstrap"><span class="nav-number">1.</span> <span class="nav-text">bootstrap</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#bootstrap-table"><span class="nav-number">2.</span> <span class="nav-text">bootstrap-table</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据传入"><span class="nav-number">2.1.</span> <span class="nav-text">数据传入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#父子表格实现"><span class="nav-number">2.2.</span> <span class="nav-text">父子表格实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#字段Formatter以及cellStyle"><span class="nav-number">2.3.</span> <span class="nav-text">字段Formatter以及cellStyle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bootstrap-table-refresh"><span class="nav-number">2.4.</span> <span class="nav-text">bootstrap-table refresh</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#bootstrap-timepicker-使用"><span class="nav-number">3.</span> <span class="nav-text">bootstrap timepicker 使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#bootstrap-select-input-button-输入框组"><span class="nav-number">4.</span> <span class="nav-text">bootstrap select input button 输入框组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

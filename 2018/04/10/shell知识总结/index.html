@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="shell在日常运维中还是很强大的，而且很方便。如果你目睹过大神们写的规整的shell脚本,你会感觉这不止是简单的shell命令罗列。所以简单的if while 逻辑我可能不会记录在这个文章中。  flock锁 有的时候写个监控脚本，放到cron之中，每分钟运行一次，but sometimes,会有各种情况，脚本没有一分钟没有执行完成，然后可能会造成每分钟开一个相同进程，都处于卡住的状态。时间一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="shell知识总结">
+<meta property="og:url" content="https://fanquqi.github.io/2018/04/10/shell%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="shell在日常运维中还是很强大的，而且很方便。如果你目睹过大神们写的规整的shell脚本,你会感觉这不止是简单的shell命令罗列。所以简单的if while 逻辑我可能不会记录在这个文章中。  flock锁 有的时候写个监控脚本，放到cron之中，每分钟运行一次，but sometimes,会有各种情况，脚本没有一分钟没有执行完成，然后可能会造成每分钟开一个相同进程，都处于卡住的状态。时间一">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-04-10T07:55:48.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.009Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="shell">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2018/04/10/shell%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>shell知识总结 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2018/04/10/shell%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          shell知识总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-04-10 15:55:48" itemprop="dateCreated datePublished" datetime="2018-04-10T15:55:48+08:00">2018-04-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/shell/" itemprop="url" rel="index"><span itemprop="name">shell</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>shell在日常运维中还是很强大的，而且很方便。如果你目睹过大神们写的规整的shell脚本,你会感觉这不止是简单的shell命令罗列。所以简单的if while 逻辑我可能不会记录在这个文章中。</p>
+</blockquote>
+<h1 id="flock锁"><a href="#flock锁" class="headerlink" title="flock锁"></a>flock锁</h1><blockquote>
+<p>有的时候写个监控脚本，放到cron之中，每分钟运行一次，but sometimes,会有各种情况，脚本没有一分钟没有执行完成，然后可能会造成每分钟开一个相同进程，都处于卡住的状态。时间一长可能把user process数量都占满，系统资源可能都被用了。这个时候就可以用flock锁了。</p>
+</blockquote>
+<p><strong>flock</strong>  是对于整个文件的建议性锁。也就是说，如果一个进程在一个文件（inode）上放了锁，那么其它进程是可以知道的。（建议性锁不强求进程遵守。）最棒的一点是，它的第一个参数是文件描述符，在此文件描述符关闭时，锁会自动释放。而当进程终止时，所有的文件描述符均会被关闭。于是，很多时候就不用考虑解锁的事情啦。</p>
+<p><strong>使用方法：</strong><br>参数：</p>
+<p><code>-s</code> 为共享锁，在定向为某文件的FD上设置共享锁而未释放锁的时间内，其他进程试图在定向为此文件的FD上设置独占锁的请求失败，而其他进程试图在定向为此文件的FD上设置共享锁的请求会成功。</p>
+<p><code>-e</code> 为独占或排他锁，在定向为某文件的FD上设置独占锁而未释放锁的时间内，其他进程试图在定向为此文件的FD上设置共享锁或独占锁都会失败。只要未设置-s参数，此参数默认被设置。</p>
+<p><code>-u</code> 手动解锁，一般情况不必须，当FD关闭时，系统会自动解锁，此参数用于脚本命令一部分需要异步执行，一部分可以同步执行的情况。</p>
+<p><code>-n</code> 为非阻塞模式，当试图设置锁失败，采用非阻塞模式，直接返回1，并继续执行下面语句。<br><code>-w</code> 设置阻塞超时，当超过设置的秒数，就跳出阻塞，返回1，并继续执行下面语句。<br><code>-o</code> 必须是使用第一种格式时才可用，表示当执行command前关闭设置锁的FD，以使command的子进程不保持锁。<br><code>-c</code> 执行其后的comand。</p>
+<ol>
+<li><p>脚本外嵌套使用</p>
+<p> flock -x /tmp/test.lock -c “cat /tmp/test”</p>
+</li>
+<li><p>脚本内调用</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(</span><br><span class="line">( flock -n 100</span><br><span class="line">if [ $? -eq 0 ]</span><br><span class="line">then</span><br><span class="line"># … commands executed under lock …</span><br><span class="line">) 100&gt;&#x2F;var&#x2F;lock&#x2F;mylockfile</span><br></pre></td></tr></table></figure>
+
+
+<p>refer:<br><a href="https://my.oschina.net/leejun2005/blog/108656">https://my.oschina.net/leejun2005/blog/108656</a></p>
+<h1 id="大小括号准确适用"><a href="#大小括号准确适用" class="headerlink" title="大小括号准确适用"></a>大小括号准确适用</h1><p><code>$()</code> 与 `` 效果一样，执行shell，获取结果，可以直接赋值到变量。</p>
+<pre><code>hostname=`hostname`
+hostname=$(hostname)</code></pre><p><code>${}</code>使用</p>
+<ol>
+<li><p>普通使用其实与$无益,但是更灵活<br>例如：<br> a=1<br> b=2<br> echo $ab 与 echo ${a}b</p>
+</li>
+<li><p>匹配字符</p>
+</li>
+</ol>
+<p>以变量a=”error:19:20180410”为例</p>
+<table>
+<thead>
+<tr>
+<th>表达式</th>
+<th>含义</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>${a#error:}</td>
+<td>从左删除掉<strong>error:</strong></td>
+<td>19:20180410</td>
+</tr>
+<tr>
+<td>${a#*:}</td>
+<td>非贪婪左删除</td>
+<td>19:20180410</td>
+</tr>
+<tr>
+<td>${a##*:}</td>
+<td>贪婪左删除</td>
+<td>20180410</td>
+</tr>
+<tr>
+<td>${a%:*}</td>
+<td>非贪婪右删除</td>
+<td>error:19</td>
+</tr>
+<tr>
+<td>${a%%:*}</td>
+<td>贪婪右删除</td>
+<td>error</td>
+</tr>
+</tbody></table>
+<ol start="3">
+<li>sed 正则匹配</li>
+</ol>
+<p>以PHP 版本为例，如<code>5.5.2</code> 需要只截取前面两位数字<code>5.5</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$(echo &#96;php -version | head -n 1 | awk &#39;&#123;print $2&#125;&#39;&#96; | sed &#39;s&#x2F;\([0-9].[0-9]\).*&#x2F;\1&#x2F;g&#39;)</span><br></pre></td></tr></table></figure>
+
+<p><code>\1</code> 表示上一段中第一个括号里面截取的内容，如果有第二个括号，可以使用<code>\2</code>输出。</p>
+<ol start="4">
+<li><p>浮点数比较</p>
+<p> if [ $(echo “$mya &lt;= 4”|bc) = 1 ]; then echo “ok”;else echo “fail”;fi  </p>
+</li>
+<li><p>json处理</p>
+<p> 使用<code>jq</code>工具会使shell处理json 事半功倍。</p>
+<p> 使用过程不赘述</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">result &#x3D; &#123;</span><br><span class="line">    &quot;errno&quot;: 0,</span><br><span class="line">    &quot;errmsg&quot;: &quot;&quot;,</span><br><span class="line">    &quot;node&quot;: &quot;host1&quot;,</span><br><span class="line">    &quot;data&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;cluster&quot;: &quot;bjqq&quot;,</span><br><span class="line">            &quot;cluster_type&quot;: &quot;私有集群&quot;,</span><br><span class="line">            &quot;domain&quot;: &quot;http:&#x2F;&#x2F;host2:1234&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;cluster&quot;: &quot;ruok&quot;,</span><br><span class="line">            &quot;cluster_type&quot;: &quot;私有集群&quot;,</span><br><span class="line">            &quot;domain&quot;: &quot;http:&#x2F;&#x2F;host2:8888&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">  for row in $(echo $result | $json_jq &quot;.data&quot;| jq -r &quot;.[] | @base64&quot;); do</span><br><span class="line">    _jq() &#123;</span><br><span class="line">     echo $&#123;row&#125; | base64 --decode | jq -r $&#123;1&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if [ &quot;$(_jq &#39;.cluster&#39;)&quot; &#x3D; &quot;$1&quot; ];then</span><br><span class="line">     # echo $(_jq &#39;.cluster&#39;),$1</span><br><span class="line">      km_host&#x3D;$(_jq &#39;.domain&#39;)</span><br><span class="line"></span><br><span class="line">    fi</span><br><span class="line">  done</span><br></pre></td></tr></table></figure>
+
+<ol start="6">
+<li>expect交互输入密码</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;usr&#x2F;bin&#x2F;expect &lt;&lt; EOF</span><br><span class="line"></span><br><span class="line">    spawn service kdump propagate</span><br><span class="line">    expect &quot;password:&quot;</span><br><span class="line">    send &quot;123\r&quot;</span><br><span class="line">    expect off</span><br><span class="line"></span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<ol start="7">
+<li>grep 查看文件重复内容</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">找出A文件中有B文件中没有的行</span><br><span class="line">grep -v -f A  B &gt; temp</span><br><span class="line"># grep 过滤两个文件相同的行</span><br><span class="line">grep -wf aaa.txt bbb.txt</span><br><span class="line"># grep 对比两个文件不同的行（b存在a不存在）</span><br><span class="line">grep -wvf aaa.txt bbb.txt</span><br></pre></td></tr></table></figure>
+
+
+<ol start="8">
+<li>查看进程间通讯状态</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">同机器进程之间通讯方式一般分为三种：共享内存，队列，信号</span><br><span class="line">ipcs 命令可以查看进程间通讯状态</span><br></pre></td></tr></table></figure>
+
+<ol start="9">
+<li><p>查看进程所在目录</p>
+<p> pwdx pid</p>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/shell/" rel="tag"># shell</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2018/04/02/golang%E7%AC%94%E8%AE%B0/" rel="prev" title="golang笔记">
+      <i class="fa fa-chevron-left"></i> golang笔记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2018/06/05/nginx%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%BD%BF%E7%94%A8%E7%B3%BB%E7%BB%9F%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F/" rel="next" title="nginx配置文件使用系统环境变量">
+      nginx配置文件使用系统环境变量 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#flock锁"><span class="nav-number">1.</span> <span class="nav-text">flock锁</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#大小括号准确适用"><span class="nav-number">2.</span> <span class="nav-text">大小括号准确适用</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="运维在日常免不了迁移服务，而迁移服务又免不了迁移数据库。 通常情况下数据库还比较重要，所以怎么样平滑的迁移数据库就显得很重要。我在前段时间迁移了青云几台机器的服务，其中涉及到一些MySQL数据库的操作，做了些记录。   mysqldump 这是比较常见，一般数据库数据量很小的时候，首要我们就会考虑这个。优点:在于能够与正在运行的 MySQL 自动协同工作，支持备份 InnoDB 以及 MyISA">
+<meta property="og:type" content="article">
+<meta property="og:title" content="几种mysql迁移">
+<meta property="og:url" content="https://fanquqi.github.io/2017/06/16/%E5%87%A0%E7%A7%8Dmysql%E8%BF%81%E7%A7%BB/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="运维在日常免不了迁移服务，而迁移服务又免不了迁移数据库。 通常情况下数据库还比较重要，所以怎么样平滑的迁移数据库就显得很重要。我在前段时间迁移了青云几台机器的服务，其中涉及到一些MySQL数据库的操作，做了些记录。   mysqldump 这是比较常见，一般数据库数据量很小的时候，首要我们就会考虑这个。优点:在于能够与正在运行的 MySQL 自动协同工作，支持备份 InnoDB 以及 MyISA">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/windows_binlog.png">
+<meta property="article:published_time" content="2017-06-16T04:12:23.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.022Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/windows_binlog.png">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/06/16/%E5%87%A0%E7%A7%8Dmysql%E8%BF%81%E7%A7%BB/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>几种mysql迁移 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/06/16/%E5%87%A0%E7%A7%8Dmysql%E8%BF%81%E7%A7%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          几种mysql迁移
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-06-16 12:12:23" itemprop="dateCreated datePublished" datetime="2017-06-16T12:12:23+08:00">2017-06-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>运维在日常免不了迁移服务，而迁移服务又免不了迁移数据库。 通常情况下数据库还比较重要，所以怎么样平滑的迁移数据库就显得很重要。<br>我在前段时间迁移了青云几台机器的服务，其中涉及到一些MySQL数据库的操作，做了些记录。</p>
+</blockquote>
+<hr>
+<h2 id="mysqldump"><a href="#mysqldump" class="headerlink" title="mysqldump"></a>mysqldump</h2><blockquote>
+<p>这是比较常见，一般数据库数据量很小的时候，首要我们就会考虑这个。<br><code>优点</code>:在于能够与正在运行的 MySQL 自动协同工作，支持备份 InnoDB 以及 MyISAM 表；锁表既是优点又是缺点，看怎么看待；<br><code>缺点</code>:在于数据量大，备份速度慢；</p>
+</blockquote>
+<p>这次服务迁移 中涉及到我们的OA系统，之前是部署在一个windows-server上的。</p>
+<h3 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h3><ol>
+<li>windows 上mysql迁移到 centos7  </li>
+<li>之前单实例换为双主(haproxy代理)</li>
+</ol>
+<h3 id="迁移具体过程"><a href="#迁移具体过程" class="headerlink" title="迁移具体过程"></a>迁移具体过程</h3><p>在centos7机器<br>直接远程dump</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqldump -h117.******* -uoa -p oa --flush-logs --single-transaction | mysql -h localhost -uoa -p -P3314 -S &#x2F;home&#x2F;mysql&#x2F;3314&#x2F;mysql.sock v50</span><br></pre></td></tr></table></figure>
+
+<p><code>--flush-logs</code><br>在开始导出前刷新服务器的日志文件。注意，如果你一次性导出很多数据库（使用 -databases=或–all-databases选项），导出每个库时都会触发日志刷新。例外是当使用了–lock-all-tables或–master-data时：日志只会被刷新一次，那个时候所有表都会被锁住。所以如果你希望你的导出和日志刷新发生在同一个确定的时刻，你需要使用–lock-all-tables，或者–master-data配合–flush-logs。</p>
+<p><code>--single-transaction</code><br>InnoDB 表在备份时，通常启用选项 –single-transaction 来保证备份的一致性，实际上它的工作原理是设定本次会话的隔离级别为：REPEATABLE READ，以确保本次会话(dump)时，不会看到其他会话已经提交了的数据。</p>
+<p>之后查看windows机器的bin-log日志，查看在备份时间节点新的bin-log文件<br><img src="http://or2jd66dq.bkt.clouddn.com/windows_binlog.png" alt=""></p>
+<p>之后建立两个mysql主从(期间我centos7机器的mysql双主已经使用ansible搭建成功在此省略)</p>
+<p>windows——MySQL 授权</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">设置chunyu账号负责数据同步</span><br><span class="line">GRANT REPLICATION SLAVE,RELOAD,SUPER ON *.* TO &#39;chunyu&#39;@&#39;%&#39; IDENTIFIED BY &#39;123&#39;;</span><br><span class="line">FLUSH PRIVILEGES ;</span><br></pre></td></tr></table></figure>
+
+<p>centos7_1 停掉双主中自己slave角色，重新设置master</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">STOP SLAVE;</span><br><span class="line">RESET SLAVE;</span><br><span class="line">change master to master_host&#x3D;&#39;117.****&#39;,master_port&#x3D;3306,master_user&#x3D;&#39;chunyu&#39;,master_password&#x3D;&#39;123&#39;,master_log_file&#x3D;&#39;mysql-bin.000008&#39;,master_log_pos&#x3D;120;</span><br><span class="line">start slave;</span><br><span class="line">show slave status;</span><br></pre></td></tr></table></figure>
+
+<p>因为centos是双主，所以需要先断掉这台机的slave，另一台centos不用操作，这样双主变成了主从，在设置windows——MySQL为主此时关系应该是:<br>win_mysql(master) centos7_1(slave)<br>centos7_1(master) centos7_2(slave)</p>
+<p>之后服务迁移完之后，可以再设置回双主此处省略。</p>
+<h2 id="percona-xtrabackup"><a href="#percona-xtrabackup" class="headerlink" title="percona-xtrabackup"></a>percona-xtrabackup</h2><blockquote>
+<p>这台是redmine的数据库数据比较多，部署在ubuntu上。数据量大可以使用xtrabackup 热备份。</p>
+</blockquote>
+<p><code>优点</code>: 可靠高效的备份DB;备份过程中不中断事务处理，热备份;快速进行恢复等。<br><code>缺点</code>:</p>
+<h3 id="需求-1"><a href="#需求-1" class="headerlink" title="需求"></a>需求</h3><ol>
+<li>ubuntu上mysql迁移到centos7 mysql</li>
+<li>之前单实例换为双主(haproxy代理)</li>
+</ol>
+<h3 id="操作过程"><a href="#操作过程" class="headerlink" title="操作过程"></a>操作过程</h3><blockquote>
+<p>也是先备份传输，建立主从，恢复双主。</p>
+</blockquote>
+<p>ubuntu上 备份</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">apt-get install percona-xtrabackup</span><br><span class="line">innobackupex --user&#x3D;root --password&#x3D;123 .&#x2F;</span><br><span class="line">tar -czvf mysql_back.tar.gz 2017-04-25_10-58-40</span><br></pre></td></tr></table></figure>
+
+<p>centos7 传输 解压 放到相应目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">rsync -auvzP --bwlimit&#x3D;5000 root@117.****:&#x2F;mnt&#x2F;sdc&#x2F;mysql_back.tar.gz .&#x2F;</span><br><span class="line">cd &#x2F;home&#x2F;mysql&#x2F; &amp;&amp; mv data&#x2F;data_back</span><br><span class="line">tar -zxvf mysql_back.tar.gz </span><br><span class="line">mv 2017-04-25_10-58-40&#x2F; data</span><br><span class="line">chown -R mysql:mysql data</span><br></pre></td></tr></table></figure>
+
+<p>postion点查看:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@test_biz 2017-06-16_15-39-01]# cat xtrabackup_binlog_info</span><br><span class="line">mysql-bin.000054    57952335</span><br></pre></td></tr></table></figure>
+
+
+<p>之后主从设置 迁移完服务之后恢复双主。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/16/rpm%E5%8C%85%E5%88%B6%E4%BD%9C/" rel="prev" title="rpm包制作">
+      <i class="fa fa-chevron-left"></i> rpm包制作
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/17/%E5%86%85%E6%A0%B8%E5%8F%82%E6%95%B0%E4%BA%86%E8%A7%A3%E5%8F%8A%E4%BC%98%E5%8C%96/" rel="next" title="内核参数了解及优化">
+      内核参数了解及优化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#mysqldump"><span class="nav-number">1.</span> <span class="nav-text">mysqldump</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#需求"><span class="nav-number">1.1.</span> <span class="nav-text">需求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#迁移具体过程"><span class="nav-number">1.2.</span> <span class="nav-text">迁移具体过程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#percona-xtrabackup"><span class="nav-number">2.</span> <span class="nav-text">percona-xtrabackup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#需求-1"><span class="nav-number">2.1.</span> <span class="nav-text">需求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#操作过程"><span class="nav-number">2.2.</span> <span class="nav-text">操作过程</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="nginx配置第三篇，nginx安装配置中讲了很多基础配置，这次讲一下具体的操作配置。  location配置 location模块工作在虚拟主机server之下，对URL进行匹配，如果匹配成功就按照该location之中写的语句进行操作。  语法  location [&#x3D;||*|^~] &#x2F;uri&#x2F; { … } 匹配规则    模式 含义    location &#x3D; &#x2F;uri &#x3D; 表示精确匹配，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nginx之location,upstream,rewrite">
+<meta property="og:url" content="https://fanquqi.github.io/2017/07/08/nginx%E4%B9%8Blocation-upstream-rewrite/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="nginx配置第三篇，nginx安装配置中讲了很多基础配置，这次讲一下具体的操作配置。  location配置 location模块工作在虚拟主机server之下，对URL进行匹配，如果匹配成功就按照该location之中写的语句进行操作。  语法  location [&#x3D;||*|^~] &#x2F;uri&#x2F; { … } 匹配规则    模式 含义    location &#x3D; &#x2F;uri &#x3D; 表示精确匹配，">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-07-08T06:19:45.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.998Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="nginx">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/07/08/nginx%E4%B9%8Blocation-upstream-rewrite/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>nginx之location,upstream,rewrite | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/07/08/nginx%E4%B9%8Blocation-upstream-rewrite/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          nginx之location,upstream,rewrite
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-07-08 14:19:45" itemprop="dateCreated datePublished" datetime="2017-07-08T14:19:45+08:00">2017-07-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E5%9F%BA%E7%A1%80%E8%BF%90%E7%BB%B4/" itemprop="url" rel="index"><span itemprop="name">基础运维</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>nginx配置第三篇，<a href="https://fanquqi.github.io/2017/07/06/nginx%E4%B9%8B%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/">nginx安装配置</a>中讲了很多基础配置，这次讲一下具体的操作配置。</p>
+</blockquote>
+<h2 id="location配置"><a href="#location配置" class="headerlink" title="location配置"></a>location配置</h2><blockquote>
+<p>location模块工作在虚拟主机server之下，对URL进行匹配，如果匹配成功就按照该location之中写的语句进行操作。</p>
+</blockquote>
+<p><strong>语法</strong> </p>
+<p>location [=|<del>|</del>*|^~] /uri/ { … }</p>
+<p><strong>匹配规则</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">模式</th>
+<th align="center">含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">location = /uri</td>
+<td align="center">= 表示精确匹配，只有完全匹配上才能生效。</td>
+</tr>
+<tr>
+<td align="left">location ^~ /uri</td>
+<td align="center">^~ 开头对URL路径进行前缀匹配，并且在正则之前。</td>
+</tr>
+<tr>
+<td align="left">location ~ pattern</td>
+<td align="center">区分大小写的正则匹配</td>
+</tr>
+<tr>
+<td align="left">location ~* pattern</td>
+<td align="center">不区分大小写的正则匹配</td>
+</tr>
+<tr>
+<td align="left">location /uri</td>
+<td align="center">不带任何修饰符，也表示前缀匹配，但是在正则匹配之后</td>
+</tr>
+<tr>
+<td align="left">location /</td>
+<td align="center">通用匹配，任何未匹配到其它location的请求都会匹配到，相当于switch中的default</td>
+</tr>
+</tbody></table>
+<p>&emsp;&emsp;那么如果我们在一个虚拟主机下边写了很多location 规则，哪一个先匹配哪一个后匹配呢？<br>是这样的。<br>nginx会根据模糊程度排序的</p>
+<ul>
+<li>首先精确匹配 =</li>
+<li>其次前缀匹配 ^~</li>
+<li>其次是按文件中顺序的正则匹配</li>
+<li>然后匹配不带任何修饰的前缀匹配。</li>
+<li>最后是交给 / 通用匹配</li>
+<li>当有匹配成功时候，停止匹配，按当前匹配规则处理请求</li>
+</ul>
+<h2 id="upstream"><a href="#upstream" class="headerlink" title="upstream"></a>upstream</h2><blockquote>
+<p>负载均衡模块,负责根据配置合理分流到各个代理节点，而且自带后端节点健康检查（需要自己通过proxy_read_timeout指令和proxy_next_upstream指令配置）</p>
+</blockquote>
+<p><a href="http://nolinux.blog.51cto.com/4824967/1594029">参考文章</a><br><strong>语法</strong> <code>upstream name {server ip:port 状态}</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">http &#123;</span><br><span class="line">    upstream name &#123;</span><br><span class="line">        </span><br><span class="line">        [ip_hash;]</span><br><span class="line">        server ip:port [weight&#x3D;n];</span><br><span class="line">        server ip:port [weight&#x3D;n];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name   www.xxx.com; </span><br><span class="line"></span><br><span class="line">    proxy_pass http:&#x2F;&#x2F;name;</span><br><span class="line">    或者</span><br><span class="line">    uwsgi_pass </span><br><span class="line">    或者</span><br><span class="line">    fast_cgi_pass</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上下文 http server location </p>
+<p>负载均衡策略: </p>
+<ul>
+<li>轮询(默认)</li>
+<li>设置权重(weight)</li>
+<li>ip_hash(每个请求按访问ip的hash结果分配，这样每个访客固定访问一个后端服务器，可以解决session的问题。)</li>
+</ul>
+<p>其次还可以定义状态</p>
+<ul>
+<li>down 表示单前的server暂时不参与负载</li>
+<li>weight 默认为1.weight越大，负载的权重就越大。</li>
+<li>max_fails ：允许请求失败的次数默认为1.当超过最大次数时，返回proxy_next_upstream 模块定义的错误</li>
+<li>fail_timeout:max_fails次失败后，暂停的时间。</li>
+<li>backup： 其它所有的非backup机器down或者忙的时候，请求backup机器。所以这台机器压力会最轻。</li>
+</ul>
+<h3 id="负载均衡后端节点健康检查"><a href="#负载均衡后端节点健康检查" class="headerlink" title="负载均衡后端节点健康检查"></a>负载均衡后端节点健康检查</h3><p>&emsp;&emsp;严格来说，nginx自带是没有针对负载均衡后端节点的健康检查的，但是可以通过默认自带的ngx_http_proxy_module.<br>  模块和ngx_http_upstream_module模块中的相关指令来完成当后端节点出现故障时，自动切换到健康节点来提供访问。</p>
+<p>这里学习下ngx_http_proxy_module 模块中的 <code>proxy_connect_timeout</code> 指令、<code>proxy_read_timeout</code>指令和<code>proxy_next_upstream</code>指令</p>
+<p><strong>设置与后端服务器建立连接的超时时间。</strong> 应该注意这个超时一般不可能大于75秒。</p>
+<pre><code>proxy_connect_timeout 60s;</code></pre><p><strong>设置从后端服务器读取响应的超时</strong></p>
+<pre><code>proxy_read_timeout 60s;</code></pre><p><strong>指定在何种情况下一个失败的请求应该被发送到下一台后端服务节点</strong></p>
+<pre><code>proxy_next_upstream error timeout;</code></pre><p><code>error</code>      和后端服务器建立连接时，或者向后端服务器发送请求时，或者从后端服务器接收响应头时，出现错误</p>
+<p><code>timeout</code>    和后端服务器建立连接时，或者向后端服务器发送请求时，或者从后端服务器接收响应头时，出现超时</p>
+<p><code>invalid_header</code>  后端服务器返回空响应或者非法响应头</p>
+<p><code>http_500</code>    后端服务器返回的响应状态码为500</p>
+<p><code>http_502</code>    后端服务器返回的响应状态码为502</p>
+<p><code>http_503</code>    后端服务器返回的响应状态码为503</p>
+<p><code>http_504</code>    后端服务器返回的响应状态码为504</p>
+<p><code>http_404</code>    后端服务器返回的响应状态码为404</p>
+<p><code>off</code>         停止将请求发送给下一台后端服务器</p>
+<p>&emsp;&emsp;还可以通过tengine来实现，淘宝技术团队开发的<code>nginx_upstream_check_module</code>模块来实现。<br>如果没有使用tengine需要打补丁。<br>配置起来比上述方法简单一些。<a href="http://tengine.taobao.org/document_cn/http_upstream_check_cn.html">参考地址</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">http &#123;</span><br><span class="line">    upstream cluster1 &#123;</span><br><span class="line">        # simple round-robin</span><br><span class="line">        server 192.168.0.1:80;</span><br><span class="line">        server 192.168.0.2:80;</span><br><span class="line">        check interval&#x3D;3000 rise&#x3D;2 fall&#x3D;5 timeout&#x3D;1000 type&#x3D;http;</span><br><span class="line">        check_http_send &quot;HEAD &#x2F; HTTP&#x2F;1.0\r\n\r\n&quot;;</span><br><span class="line">        check_http_expect_alive http_2xx http_3xx;</span><br><span class="line">    &#125;</span><br><span class="line">    upstream cluster2 &#123;</span><br><span class="line">        # simple round-robin</span><br><span class="line">        server 192.168.0.3:80;</span><br><span class="line">        server 192.168.0.4:80;</span><br><span class="line">        check interval&#x3D;3000 rise&#x3D;2 fall&#x3D;5 timeout&#x3D;1000 type&#x3D;http;</span><br><span class="line">        check_keepalive_requests 100;</span><br><span class="line">        check_http_send &quot;HEAD &#x2F; HTTP&#x2F;1.1\r\nConnection: keep-alive\r\n\r\n&quot;;</span><br><span class="line">        check_http_expect_alive http_2xx http_3xx;</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;上面配置的意思是，对name这个负载均衡条目中的所有节点，每个3秒检测一次，请求2次正常则标记 realserver状态为up，如果检测 5 次都失败，则标记 realserver的状态为down，超时时间为1秒。</p>
+<ul>
+<li>interval：向后端发送的健康检查包的间隔。</li>
+<li>fall(fall_count): 如果连续失败次数达到fall_count，服务器就被认为是down。</li>
+<li>rise(rise_count): 如果连续成功次数达到rise_count，服务器就被认为是up。</li>
+<li>timeout: 后端健康请求的超时时间。</li>
+<li>type：健康检查包的类型，现在支持以下多种类型<ul>
+<li>tcp：简单的tcp连接，如果连接成功，就说明后端正常。</li>
+<li>ssl_hello：发送一个初始的SSL hello包并接受服务器的SSL hello包。</li>
+<li>http：发送HTTP请求，通过后端的回复包的状态来判断后端是否存活。</li>
+<li>mysql: 向mysql服务器连接，通过接收服务器的greeting包来判断后端是否存活。</li>
+<li>ajp：向后端发送AJP协议的Cping包，通过接收Cpong包来判断后端是否存活。</li>
+</ul>
+</li>
+</ul>
+<p><strong>check_keepalive_requests</strong></p>
+<p>&emsp;&emsp;该指令可以配置一个连接发送的请求数，其默认值为1，表示Tengine完成1次请求后即关闭连接。</p>
+<p><strong>check_http_send</strong></p>
+<p>&emsp;&emsp;该指令可以配置http健康检查包发送的请求内容。为了减少传输数据量，推荐采用”HEAD”方法。</p>
+<p>当采用长连接进行健康检查时，需在该指令中添加keep-alive请求头，如：”HEAD / HTTP/1.1\r\nConnection: keep-alive\r\n\r\n”。<br>同时，在采用”GET”方法的情况下，请求uri的size不宜过大，确保可以在1个interval内传输完成，否则会被健康检查模块视为后端服务器或网络异常。</p>
+<p><strong>check_http_expect_alive</strong></p>
+<p>&emsp;&emsp;该指令指定HTTP回复的成功状态，默认认为2XX和3XX的状态是健康的。如果爬虫多404多可以把4XX也写进去。</p>
+<ol>
+<li><h2 id="rewrite"><a href="#rewrite" class="headerlink" title="rewrite"></a>rewrite</h2></li>
+</ol>
+<blockquote>
+<p>rewrite功能就是，使用nginx提供的全局变量或自己设置的变量，结合正则表达式和标志位实现url重写以及重定向。rewrite只能放在server{},location{},if{}中，并且只能对域名后边的除去传递的参数外的字符串起作用</p>
+</blockquote>
+<p><strong>语法</strong><br><code>rewrite regex replacement [flag];</code></p>
+<p>flag标志位</p>
+<ul>
+<li>last – 相当于Apache的[L]标记，表示完成rewrite，浏览器地址不变</li>
+<li>break – 中止 Rewirte，不再继续匹配，浏览器地址不变</li>
+<li>redirect – 返回临时重定向的 HTTP 状态 302 浏览器地址显示跳转后的地址</li>
+<li>permanent – 返回永久重定向的 HTTP 状态 301 浏览器地址显示跳转后的地址</li>
+</ul>
+<p>last一般写在server和if中，而break一般使用在location中</p>
+<p>last不终止重写后的url匹配，即新的url会再从server走一遍匹配流程，而break终止重写后的匹配。</p>
+<p><strong>简单举例</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 访问&#x2F;example.html 的时候重写到&#x2F;index.html</span><br><span class="line">rewrite &#x2F;example.html &#x2F;index.html last;</span><br><span class="line">&#x2F;&#x2F; 访问&#x2F;example.html 的时候重写到&#x2F;index.html,并停止匹配</span><br><span class="line">rewrite &#x2F;example.html &#x2F;index.html break;</span><br><span class="line">&#x2F;&#x2F; 把 &#x2F;search&#x2F;key &#x3D;&gt; &#x2F;search.html?keyword&#x3D;key</span><br><span class="line">rewrite &#39;^&#x2F;images&#x2F;([a-z]&#123;2&#125;)&#x2F;([a-z0-9]&#123;5&#125;)&#x2F;(.*)\.(png|jpg|gif)$&#39; &#x2F;data?file&#x3D;$3.$4 last;</span><br><span class="line"> &quot;^&quot; 表示开头匹配 &quot;$&quot; 表示结尾匹配 而且表示路径的&quot;&#x2F;&quot;是需要转义的，&quot;$1&quot;表示表达式匹配到的第一个括号里面的内容，即([a-z]&#123;2&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>正则实例可以<a href="http://www.cnblogs.com/zxin/archive/2013/01/26/2877765.html">参考</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/nginx/" rel="tag"># nginx</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/07/nginx%E4%B9%8BHTTPS%E9%85%8D%E7%BD%AE/" rel="prev" title="nginx之HTTPS配置">
+      <i class="fa fa-chevron-left"></i> nginx之HTTPS配置
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/11/ucloud-API%E4%BD%BF%E7%94%A8/" rel="next" title="通过ucloud_API查看资源价格">
+      通过ucloud_API查看资源价格 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#location配置"><span class="nav-number">1.</span> <span class="nav-text">location配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#upstream"><span class="nav-number">2.</span> <span class="nav-text">upstream</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#负载均衡后端节点健康检查"><span class="nav-number">2.1.</span> <span class="nav-text">负载均衡后端节点健康检查</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rewrite"><span class="nav-number">3.</span> <span class="nav-text">rewrite</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="公司之前的日志收集使用的kids(知乎开源的日志收集工具，不知道为啥用这个，难道是因为跟我们你是邻居？)。然后统一收留存到一台机器，做中转留几天的方便大家查看，后续直接存到Hadoop中。后来搭建ELK就是直接在这个机器上起的logstash，说白了只是把这几天的日志做了可视化。但是现在我们有了另一种需求，需要收集各个机器的系统日志，加上之前做了bash_history 也需要收集。但是我并不是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="file_beat接入ELK">
+<meta property="og:url" content="https://fanquqi.github.io/2017/06/06/file-beat%E6%8E%A5%E5%85%A5ELK/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="公司之前的日志收集使用的kids(知乎开源的日志收集工具，不知道为啥用这个，难道是因为跟我们你是邻居？)。然后统一收留存到一台机器，做中转留几天的方便大家查看，后续直接存到Hadoop中。后来搭建ELK就是直接在这个机器上起的logstash，说白了只是把这几天的日志做了可视化。但是现在我们有了另一种需求，需要收集各个机器的系统日志，加上之前做了bash_history 也需要收集。但是我并不是">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/ELK%E6%97%A9%E6%9C%9F%E6%9E%B6%E6%9E%84.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/ELK-kafka.png">
+<meta property="article:published_time" content="2017-06-06T07:56:13.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.989Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="ELK, filebeat, kafka">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/ELK%E6%97%A9%E6%9C%9F%E6%9E%B6%E6%9E%84.png">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/06/06/file-beat%E6%8E%A5%E5%85%A5ELK/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>file_beat接入ELK | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/06/06/file-beat%E6%8E%A5%E5%85%A5ELK/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          file_beat接入ELK
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-06-06 15:56:13" itemprop="dateCreated datePublished" datetime="2017-06-06T15:56:13+08:00">2017-06-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E8%BF%90%E7%BB%B4%E5%B7%A5%E5%85%B7/" itemprop="url" rel="index"><span itemprop="name">运维工具</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>公司之前的日志收集使用的kids(知乎开源的日志收集工具，不知道为啥用这个，难道是因为跟我们你是邻居？)。然后统一收留存到一台机器，做中转留几天的方便大家查看，后续直接存到Hadoop中。后来搭建ELK就是直接在这个机器上起的logstash，说白了只是把这几天的日志做了可视化。但是现在我们有了另一种需求，需要收集各个机器的系统日志，加上之前做了bash_history 也需要收集。但是我并不是很想用kids,它改配置重启都比较麻烦。也不太想用整个的logstash，太大了，正好filebeat可以满足我们的需求，很轻而且使用go开发。<br>但是还是有一个想法，之前的ELK 有的时候会出现数据延时很大的情况，我分析是ES集群的压力过大，所以我想在ES之前加一个缓冲，加一个kafka队列<br>这正好是一个实验的机会。</p>
+</blockquote>
+<p>之前架构：<br><img src="http://or2jd66dq.bkt.clouddn.com/ELK%E6%97%A9%E6%9C%9F%E6%9E%B6%E6%9E%84.png" alt=""></p>
+<p>架构调整如下：</p>
+<p><img src="http://or2jd66dq.bkt.clouddn.com/ELK-kafka.png" alt=""></p>
+<p>参考:<a href="https://www.ibm.com/developerworks/cn/opensource/os-cn-elk-filebeat/index.html">https://www.ibm.com/developerworks/cn/opensource/os-cn-elk-filebeat/index.html</a></p>
+<h2 id="版本介绍"><a href="#版本介绍" class="headerlink" title="版本介绍"></a>版本介绍</h2><ul>
+<li>logstash 2.3.2</li>
+<li>Elasticsearch 2.3.2</li>
+<li>kafka 0.10.0.2</li>
+<li>filebeat 5.0.0</li>
+<li>kibana 4.3.1<br>由于ELKstack 各个组件之前有很强的版本依赖，所以安装之前最好确认下。据说filebeat5.0 logstash也得使用5.0,ES 也得使用5.0 但是我们使filebeat 和logstash之间加了一个kafka队列，就给这两个组件直接解耦了。filebeat5.0之后才能直接output到kafka。logstash2.3可以直接使用kafka 作为input。正好。。。</li>
+</ul>
+<h1 id="kafka安装"><a href="#kafka安装" class="headerlink" title="kafka安装"></a>kafka安装</h1><blockquote>
+<p>最新版本0.10.0.2<br>java 1.8</p>
+</blockquote>
+<p>部署参考: <a href="https://www.mtyun.com/library/32/how-to-install-kafka-on-centos7/">https://www.mtyun.com/library/32/how-to-install-kafka-on-centos7/</a><br>kafka配置参考: <a href="http://www.cnblogs.com/davidwang456/p/4195873.html">http://www.cnblogs.com/davidwang456/p/4195873.html</a></p>
+<p><code>Broker</code><br>Kafka集群包含一个或多个服务器，这种服务器被称为broker</p>
+<p><code>Topic</code><br>每条发布到Kafka集群的消息都有一个类别，这个类别被称为Topic。（物理上不同Topic的消息分开存储，逻辑上一个Topic的消息虽然保存于一个或多个broker上但用户只需指定消息的Topic即可生产或消费数据而不必关心数据存于何处）</p>
+<p><code>Partition</code><br>Parition是物理上的概念，每个Topic包含一个或多个Partition.<br>很像ES的分片概念，合理设置可以提高效率</p>
+<p><code>Producer</code><br>负责发布消息到Kafka broker</p>
+<p><code>Consumer</code><br>消息消费者，向Kafka broker读取消息的客户端。</p>
+<p><code>Consumer Group</code><br>每个Consumer属于一个特定的Consumer Group（可为每个Consumer指定group name，若不指定group name则属于默认的group）。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">wget http:&#x2F;&#x2F;mirror.bit.edu.cn&#x2F;apache&#x2F;kafka&#x2F;0.10.2.1&#x2F;kafka_2.10-0.10.2.1.tgz</span><br><span class="line">tar -zxvf kafka_2.10-0.10.2.1.tgz</span><br><span class="line"></span><br><span class="line"># 启动zookeeper </span><br><span class="line">bin&#x2F;zookeeper-server-start.sh -daemon config&#x2F;zookeeper.properties</span><br><span class="line"># 启动kafka</span><br><span class="line">bin&#x2F;kafka-server-start.sh config&#x2F;server.properties &amp;</span><br><span class="line"># 功能验证</span><br><span class="line">## 新建一个topic </span><br><span class="line">bin&#x2F;kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test</span><br><span class="line">## 查看topic </span><br><span class="line">bin&#x2F;kafka-topics.sh --list --zookeeper localhost:2181</span><br><span class="line">## 手动产生消息</span><br><span class="line">bin&#x2F;kafka-console-producer.sh --broker-list localhost:9092 --topic test </span><br><span class="line">Hello Kafka！</span><br><span class="line">nihao shijie</span><br><span class="line">## 消费消息</span><br><span class="line">bin&#x2F;kafka-console-consumer.sh --zookeeper localhost:2181 --topic test --from-beginning</span><br><span class="line">Hello world!</span><br><span class="line">nihao shijie</span><br></pre></td></tr></table></figure>
+
+<h2 id="单机多实例配置"><a href="#单机多实例配置" class="headerlink" title="单机多实例配置"></a>单机多实例配置</h2><blockquote>
+<p>由于kafka 使用的是机器的文件系统存储，所以本机多实例的集群很好。尽量减少网络通讯。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">cp config&#x2F;server.properties config&#x2F;server_1.properties</span><br><span class="line"># 修改配置文件 </span><br><span class="line">vim config&#x2F;server_1.properties</span><br><span class="line">    broker.id&#x3D;1</span><br><span class="line">    port&#x3D;9093</span><br><span class="line">    log.dirs&#x3D;&#x2F;tmp&#x2F;kafka_1-logs</span><br><span class="line"># 启动</span><br><span class="line">bin&#x2F;kafka-server-start.sh config&#x2F;server_1.properties &amp;</span><br></pre></td></tr></table></figure>
+
+<h2 id="机器调优"><a href="#机器调优" class="headerlink" title="机器调优"></a>机器调优</h2><p>File descriptors</p>
+<p>kafka会使用大量文件和网络socket，所以，我们需要把file descriptors的默认配置改为100000。修改方法如下(之前机器初始化的时候做过响应更改，可以忽略)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#vi &#x2F;etc&#x2F;sysctl.conf</span><br><span class="line"></span><br><span class="line">fs.file-max &#x3D; 32000</span><br><span class="line"></span><br><span class="line">#vi &#x2F;etc&#x2F;security&#x2F;limits.conf</span><br><span class="line"></span><br><span class="line">yourusersoftnofile10000</span><br><span class="line"></span><br><span class="line">youruserhardnofile30000</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="filebeat5-安装"><a href="#filebeat5-安装" class="headerlink" title="filebeat5 安装"></a>filebeat5 安装</h1><blockquote>
+<p>版本5.0.0</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -L -O https:&#x2F;&#x2F;artifacts.elastic.co&#x2F;downloads&#x2F;beats&#x2F;filebeat&#x2F;filebeat-5.0.0-x86_64.rpm</span><br><span class="line">rpm -ivh filebeat-5.0.0-x86_64.rpm</span><br></pre></td></tr></table></figure>
+<p>配置</p>
+<p><a href="https://www.elastic.co/guide/en/beats/filebeat/5.0/configuration-filebeat-options.html">官网配置参考</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">filebeat.prospectors:</span><br><span class="line">- input_type: log</span><br><span class="line">  paths:</span><br><span class="line">    - &#x2F;var&#x2F;log&#x2F;bash_history.log*</span><br><span class="line">  fields:</span><br><span class="line">    log_source: bash_history</span><br><span class="line">  document_type: bash_history</span><br><span class="line">  scan_frequency: 1s</span><br><span class="line">  ignore_older: 30m</span><br><span class="line"></span><br><span class="line">- input_type: log</span><br><span class="line">  paths:</span><br><span class="line">    - &#x2F;var&#x2F;log&#x2F;messages*</span><br><span class="line">  fields:</span><br><span class="line">    log_source: message</span><br><span class="line">  document_type: message</span><br><span class="line">  scan_frequency: 1s</span><br><span class="line">  ignore_older: 30m</span><br><span class="line">- input_type: log</span><br><span class="line">  paths:</span><br><span class="line">    - &#x2F;var&#x2F;log&#x2F;cron</span><br><span class="line">  fields:</span><br><span class="line">    log_source: cron</span><br><span class="line">  document_type: cron</span><br><span class="line">  scan_frequency: 1s</span><br><span class="line">  ignore_older: 30m</span><br><span class="line">- input_type: log</span><br><span class="line">  paths:</span><br><span class="line">    - &#x2F;var&#x2F;log&#x2F;secure</span><br><span class="line">  fields:</span><br><span class="line">    log_source: secure</span><br><span class="line">  document_type: secure</span><br><span class="line">  scan_frequency: 1s</span><br><span class="line">  ignore_older: 30m</span><br><span class="line">output.kafka:</span><br><span class="line">  hosts: [&quot;localhost:9092&quot;, &quot;localhost:9093&quot;]</span><br><span class="line">  topic: &#39;%&#123;[type]&#125;&#39;</span><br><span class="line">  partition.round_robin:</span><br><span class="line">    reachable_only: false</span><br><span class="line">  required_acks: 1</span><br><span class="line">  compression: gzip</span><br><span class="line">  max_message_bytes: 1000000</span><br></pre></td></tr></table></figure>
+
+<h1 id="logstash-配置"><a href="#logstash-配置" class="headerlink" title="logstash 配置"></a>logstash 配置</h1><blockquote>
+<p>logstash 是把数据从kafka中拿过来，放到ES中配置如下</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">input &#123;</span><br><span class="line">  kafka &#123;</span><br><span class="line">    zk_connect &#x3D;&gt; &quot;localhost:2181&quot;</span><br><span class="line">    topic_id &#x3D;&gt; &quot;sys_log&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">output &#123;</span><br><span class="line"></span><br><span class="line">    elasticsearch &#123;</span><br><span class="line">        hosts &#x3D;&gt; [&quot;10.215.33.36:9200&quot;]</span><br><span class="line">        manage_template &#x3D;&gt; true</span><br><span class="line">        index &#x3D;&gt; &quot;syslog-%&#123;+YYYY.MM.dd&#125;&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/ELK-filebeat-kafka/" rel="tag"># ELK, filebeat, kafka</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/03/Mac-gihub-pages-hexo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/" rel="prev" title="Mac+gihub pages+hexo搭建博客">
+      <i class="fa fa-chevron-left"></i> Mac+gihub pages+hexo搭建博客
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/06/lsof%E5%8D%81%E5%87%A0%E4%B8%AA%E5%AE%9E%E4%BE%8B/" rel="next" title="lsof十几个实例">
+      lsof十几个实例 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#版本介绍"><span class="nav-number">1.</span> <span class="nav-text">版本介绍</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#kafka安装"><span class="nav-number"></span> <span class="nav-text">kafka安装</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#单机多实例配置"><span class="nav-number">1.</span> <span class="nav-text">单机多实例配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#机器调优"><span class="nav-number">2.</span> <span class="nav-text">机器调优</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#filebeat5-安装"><span class="nav-number"></span> <span class="nav-text">filebeat5 安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#logstash-配置"><span class="nav-number"></span> <span class="nav-text">logstash 配置</span></a></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

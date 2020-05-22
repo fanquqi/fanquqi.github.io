@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="参考：https:&#x2F;&#x2F;github.com&#x2F;gpakosz&#x2F;.tmuxhttps:&#x2F;&#x2F;www.linkedin.com&#x2F;pulse&#x2F;how-i-use-tmux-iterm2-robert-freibergerhttp:&#x2F;&#x2F;cenalulu.github.io&#x2F;linux&#x2F;tmux&#x2F;  操作步骤： 12345678安装tmux$ brew install tmux下载配置文件 （配置文件依赖于po">
+<meta property="og:type" content="article">
+<meta property="og:title" content="tumx使用">
+<meta property="og:url" content="https://fanquqi.github.io/2018/11/27/tumx%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="参考：https:&#x2F;&#x2F;github.com&#x2F;gpakosz&#x2F;.tmuxhttps:&#x2F;&#x2F;www.linkedin.com&#x2F;pulse&#x2F;how-i-use-tmux-iterm2-robert-freibergerhttp:&#x2F;&#x2F;cenalulu.github.io&#x2F;linux&#x2F;tmux&#x2F;  操作步骤： 12345678安装tmux$ brew install tmux下载配置文件 （配置文件依赖于po">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://fanquqi.github.io/media/15433023443827.jpg">
+<meta property="article:published_time" content="2018-11-27T06:53:25.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.014Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="tmux">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://fanquqi.github.io/media/15433023443827.jpg">
+
+<link rel="canonical" href="https://fanquqi.github.io/2018/11/27/tumx%E4%BD%BF%E7%94%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>tumx使用 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2018/11/27/tumx%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          tumx使用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-11-27 14:53:25" itemprop="dateCreated datePublished" datetime="2018-11-27T14:53:25+08:00">2018-11-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>参考：<br><a href="https://github.com/gpakosz/.tmux">https://github.com/gpakosz/.tmux</a><br><a href="https://www.linkedin.com/pulse/how-i-use-tmux-iterm2-robert-freiberger">https://www.linkedin.com/pulse/how-i-use-tmux-iterm2-robert-freiberger</a><br><a href="http://cenalulu.github.io/linux/tmux/">http://cenalulu.github.io/linux/tmux/</a></p>
+<p><img src="/media/15433023443827.jpg" alt=""></p>
+<p>操作步骤：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">安装tmux</span><br><span class="line">$ brew install tmux</span><br><span class="line">下载配置文件 （配置文件依赖于powerline-status 需要pip安装）</span><br><span class="line">$ cd</span><br><span class="line">$ git clone https:&#x2F;&#x2F;github.com&#x2F;gpakosz&#x2F;.tmux.git</span><br><span class="line">$ ln -s -f .tmux&#x2F;.tmux.conf</span><br><span class="line">$ cp .tmux&#x2F;.tmux.conf.local .</span><br><span class="line">$ reload 配置 C-a + r</span><br></pre></td></tr></table></figure>
+
+<p>使用方法：</p>
+<h1 id="tmux-shortcuts-amp-cheatsheet"><a href="#tmux-shortcuts-amp-cheatsheet" class="headerlink" title="tmux shortcuts &amp; cheatsheet"></a>tmux shortcuts &amp; cheatsheet</h1><p>start new:</p>
+<pre><code>tmux</code></pre><p>start new with session name:</p>
+<pre><code>tmux new -s myname</code></pre><p>attach:</p>
+<pre><code>tmux a  #  (or at, or attach)</code></pre><p>attach to named:</p>
+<pre><code>tmux a -t myname</code></pre><p>list sessions:</p>
+<pre><code>tmux ls</code></pre><p><a name="killSessions"></a>kill session:</p>
+<pre><code>tmux kill-session -t myname</code></pre><p><a name="killAllSessions"></a>Kill all the tmux sessions:</p>
+<pre><code>tmux ls | grep : | cut -d. -f1 | awk &apos;{print substr($1, 0, length($1)-1)}&apos; | xargs kill</code></pre><p>In tmux, hit the prefix <code>ctrl+b</code> (my modified prefix is ctrl+a) and then:</p>
+<h2 id="Sessions"><a href="#Sessions" class="headerlink" title="Sessions"></a>Sessions</h2><pre><code>:new&lt;CR&gt;  new session
+s  list sessions
+$  name session</code></pre><h2 id="Windows-tabs"><a href="#Windows-tabs" class="headerlink" title="Windows (tabs)"></a><a name="WindowsTabs"></a>Windows (tabs)</h2><pre><code>c  create window
+w  list windows
+n  next window
+p  previous window
+f  find window
+,  name window
+&amp;  kill window</code></pre><h2 id="Panes-splits"><a href="#Panes-splits" class="headerlink" title="Panes (splits)"></a><a name="PanesSplits"></a>Panes (splits)</h2><pre><code>%  vertical split
+&quot;  horizontal split
+
+o  swap panes
+q  show pane numbers
+x  kill pane
++  break pane into window (e.g. to select text by mouse to copy)
+-  restore pane from window
+⍽  space - toggle between layouts
+&lt;prefix&gt; q (Show pane numbers, when the numbers show up type the key to goto that pane)
+&lt;prefix&gt; { (Move the current pane left)
+&lt;prefix&gt; } (Move the current pane right)
+&lt;prefix&gt; z toggle pane zoom</code></pre><h2 id="Sync-Panes"><a href="#Sync-Panes" class="headerlink" title="Sync Panes"></a><a name="syncPanes"></a>Sync Panes</h2><p>You can do this by switching to the appropriate window, typing your Tmux prefix (commonly Ctrl-B or Ctrl-A) and then a colon to bring up a Tmux command line, and typing:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:setw synchronize-panes</span><br></pre></td></tr></table></figure>
+
+<p>You can optionally add on or off to specify which state you want; otherwise the option is simply toggled. This option is specific to one window, so it won’t change the way your other sessions or windows operate. When you’re done, toggle it off again by repeating the command. <a href="http://blog.sanctum.geek.nz/sync-tmux-panes/">tip source</a></p>
+<h2 id="Resizing-Panes"><a href="#Resizing-Panes" class="headerlink" title="Resizing Panes"></a>Resizing Panes</h2><p>You can also resize panes if you don’t like the layout defaults. I personally rarely need to do this, though it’s handy to know how. Here is the basic syntax to resize panes:</p>
+<pre><code>PREFIX : resize-pane -D (Resizes the current pane down)
+PREFIX : resize-pane -U (Resizes the current pane upward)
+PREFIX : resize-pane -L (Resizes the current pane left)
+PREFIX : resize-pane -R (Resizes the current pane right)
+PREFIX : resize-pane -D 20 (Resizes the current pane down by 20 cells)
+PREFIX : resize-pane -U 20 (Resizes the current pane upward by 20 cells)
+PREFIX : resize-pane -L 20 (Resizes the current pane left by 20 cells)
+PREFIX : resize-pane -R 20 (Resizes the current pane right by 20 cells)
+PREFIX : resize-pane -t 2 20 (Resizes the pane with the id of 2 down by 20 cells)
+PREFIX : resize-pane -t -L 20 (Resizes the pane with the id of 2 left by 20 cells)</code></pre><h2 id="Copy-mode"><a href="#Copy-mode" class="headerlink" title="Copy mode:"></a>Copy mode:</h2><p>Pressing PREFIX [ places us in Copy mode. We can then use our movement keys to move our cursor around the screen. By default, the arrow keys work. we set our configuration file to use Vim keys for moving between windows and resizing panes so we wouldn’t have to take our hands off the home row. tmux has a vi mode for working with the buffer as well. To enable it, add this line to .tmux.conf:</p>
+<pre><code>setw -g mode-keys vi</code></pre><p>With this option set, we can use h, j, k, and l to move around our buffer.</p>
+<p>To get out of Copy mode, we just press the ENTER key. Moving around one character at a time isn’t very efficient. Since we enabled vi mode, we can also use some other visible shortcuts to move around the buffer.</p>
+<p>For example, we can use “w” to jump to the next word and “b” to jump back one word. And we can use “f”, followed by any character, to jump to that character on the same line, and “F” to jump backwards on the line.</p>
+<pre><code>Function                vi             emacs
+Back to indentation     ^              M-m
+Clear selection         Escape         C-g
+Copy selection          Enter          M-w
+Cursor down             j              Down
+Cursor left             h              Left
+Cursor right            l              Right
+Cursor to bottom line   L
+Cursor to middle line   M              M-r
+Cursor to top line      H              M-R
+Cursor up               k              Up
+Delete entire line      d              C-u
+Delete to end of line   D              C-k
+End of line             $              C-e
+Goto line               :              g
+Half page down          C-d            M-Down
+Half page up            C-u            M-Up
+Next page               C-f            Page down
+Next word               w              M-f
+Paste buffer            p              C-y
+Previous page           C-b            Page up
+Previous word           b              M-b
+Quit mode               q              Escape
+Scroll down             C-Down or J    C-Down
+Scroll up               C-Up or K      C-Up
+Search again            n              n
+Search backward         ?              C-r
+Search forward          /              C-s
+Start of line           0              C-a
+Start selection         Space          C-Space
+Transpose chars                        C-t</code></pre><h2 id="Misc"><a href="#Misc" class="headerlink" title="Misc"></a>Misc</h2><pre><code>d  detach
+t  big clock
+?  list shortcuts
+:  prompt</code></pre><h2 id="Configurations-Options"><a href="#Configurations-Options" class="headerlink" title="Configurations Options:"></a>Configurations Options:</h2><pre><code># Mouse support - set to on if you want to use the mouse
+* setw -g mode-mouse off
+* set -g mouse-select-pane off
+* set -g mouse-resize-pane off
+* set -g mouse-select-window off
+
+# Set the default terminal mode to 256color mode
+set -g default-terminal &quot;screen-256color&quot;
+
+# enable activity alerts
+setw -g monitor-activity on
+set -g visual-activity on
+
+# Center the window list
+set -g status-justify centre
+
+# Maximize and restore a pane
+unbind Up bind Up new-window -d -n tmp \; swap-pane -s tmp.1 \; select-window -t tmp
+unbind Down
+bind Down last-window \; swap-pane -s tmp.1 \; kill-window -t tmp</code></pre><h2 id="Notes"><a href="#Notes" class="headerlink" title="Notes:"></a>Notes:</h2><p>操作多个pane</p>
+<p><prefix> + : + setw synchronize-panes</p>
+<h2 id="Changelog"><a href="#Changelog" class="headerlink" title="Changelog:"></a>Changelog:</h2><ul>
+<li>1411143833002 - Added <a href="#PanesSplits">toggle zoom</a> under Panes (splits) section.</li>
+<li>1411143833002 - <a href="#syncPanes">Added Sync Panes</a></li>
+<li>1414276652677 - <a href="#killAllSessions">Added Kill all tmux sessions </a></li>
+<li>1438585211173 - <a href="#WindowsTabs">corrected create and add next and previus thanks to @justinjhendrick</a></li>
+</ul>
+<h2 id="Request-an-Update"><a href="#Request-an-Update" class="headerlink" title="Request an Update:"></a>Request an Update:</h2><p>We Noticed that our Cheatsheet is growing and people are coloberating to add new tips and tricks, so please tweet to me what would you like to add and let’s make it better!</p>
+<h2 id="鼠标模式"><a href="#鼠标模式" class="headerlink" title="鼠标模式"></a>鼠标模式</h2><p><prefix> + m</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/tmux/" rel="tag"># tmux</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2018/11/12/%E5%88%86%E5%B8%83%E5%BC%8F%E4%B8%80%E8%87%B4%E6%80%A7%E6%80%BB%E7%BB%93/" rel="prev" title="分布式一致性总结">
+      <i class="fa fa-chevron-left"></i> 分布式一致性总结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2019/01/14/python%E6%8A%80%E5%B7%A7/" rel="next" title="python技巧">
+      python技巧 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#tmux-shortcuts-amp-cheatsheet"><span class="nav-number">1.</span> <span class="nav-text">tmux shortcuts &amp; cheatsheet</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Sessions"><span class="nav-number">1.1.</span> <span class="nav-text">Sessions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Windows-tabs"><span class="nav-number">1.2.</span> <span class="nav-text">Windows (tabs)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Panes-splits"><span class="nav-number">1.3.</span> <span class="nav-text">Panes (splits)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sync-Panes"><span class="nav-number">1.4.</span> <span class="nav-text">Sync Panes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Resizing-Panes"><span class="nav-number">1.5.</span> <span class="nav-text">Resizing Panes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Copy-mode"><span class="nav-number">1.6.</span> <span class="nav-text">Copy mode:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Misc"><span class="nav-number">1.7.</span> <span class="nav-text">Misc</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Configurations-Options"><span class="nav-number">1.8.</span> <span class="nav-text">Configurations Options:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Notes"><span class="nav-number">1.9.</span> <span class="nav-text">Notes:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Changelog"><span class="nav-number">1.10.</span> <span class="nav-text">Changelog:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Request-an-Update"><span class="nav-number">1.11.</span> <span class="nav-text">Request an Update:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#鼠标模式"><span class="nav-number">1.12.</span> <span class="nav-text">鼠标模式</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

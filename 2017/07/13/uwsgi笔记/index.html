@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言，来公司一年了，对uwsgi的操作，只停留在部署，或者restart，并没有主动配置过，今天看nginx的时候看到nginx(我们的nginx是只转发)的请求是转发的本地某个端口，是个uwsgi提供的fastrouter服务。在此记录一下。  由于我们后端使用的都是Django项目，所以整体都是这个架构nginx–&gt;uwsgi–&gt;django.所以对uwsgi的了解也很重要。fa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="uwsgi笔记">
+<meta property="og:url" content="https://fanquqi.github.io/2017/07/13/uwsgi%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="前言，来公司一年了，对uwsgi的操作，只停留在部署，或者restart，并没有主动配置过，今天看nginx的时候看到nginx(我们的nginx是只转发)的请求是转发的本地某个端口，是个uwsgi提供的fastrouter服务。在此记录一下。  由于我们后端使用的都是Django项目，所以整体都是这个架构nginx–&gt;uwsgi–&gt;django.所以对uwsgi的了解也很重要。fa">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-07-13T06:38:09.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.018Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="uwsgi">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/07/13/uwsgi%E7%AC%94%E8%AE%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>uwsgi笔记 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/07/13/uwsgi%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          uwsgi笔记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-07-13 14:38:09" itemprop="dateCreated datePublished" datetime="2017-07-13T14:38:09+08:00">2017-07-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E5%9F%BA%E7%A1%80%E8%BF%90%E7%BB%B4/" itemprop="url" rel="index"><span itemprop="name">基础运维</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>前言，来公司一年了，对uwsgi的操作，只停留在部署，或者restart，并没有主动配置过，今天看nginx的时候看到nginx(我们的nginx是只转发)的请求是转发的本地某个端口，是个uwsgi提供的fastrouter服务。在此记录一下。</p>
+</blockquote>
+<p>由于我们后端使用的都是Django项目，所以整体都是这个架构<code>nginx</code>–&gt;<code>uwsgi</code>–&gt;<code>django</code>.所以对uwsgi的了解也很重要。<br>fastrouter使用放到后面先说，uwsgi的普通配置。</p>
+<p>版本：uWSGI==2.0.12</p>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>WSGI（Python Web Server Gateway Interface，缩写为WSGI） 是一种 Web 服务器网关接口。它是一个 Web 服务器（如 Nginx）与应用服务器（如 uWSGI 服务器）通信的一种规范。<br>uwsgi 是一种协议<br>uWSGI uWSGI是一个Web服务器，它实现了WSGI协议、uwsgi、http等协议。uWSGI，既不用wsgi协议也不用FastCGI协议，而是自创了一个uwsgi的协议，uwsgi协议是一个uWSGI服务器自有的协议，它用于定义传输信息的类型（type of information），每一个uwsgi packet前4byte为传输信息类型描述，它与WSGI相比是两样东西。据说该协议大约是fcgi协议的10倍那么快。</p>
+<p>优点：</p>
+<ul>
+<li>超快的性能。</li>
+<li>低内存占用（实测为apache2的mod_wsgi的一半左右）。</li>
+<li>多app管理。</li>
+<li>详尽的日志功能（可以用来分析app性能和瓶颈）。</li>
+<li>高度可定制（内存大小限制，服务一定次数后重启等）。</li>
+</ul>
+<p>版本：uWSGI==2.0.12</p>
+<h2 id="安装配置"><a href="#安装配置" class="headerlink" title="安装配置"></a>安装配置</h2><p>安装就是直接在virtualenv中pip安装就好了<br>pip install uWSGI</p>
+<h2 id="uwsgitop"><a href="#uwsgitop" class="headerlink" title="uwsgitop"></a>uwsgitop</h2><blockquote>
+<p>监控工具</p>
+</blockquote>
+<h3 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h3><p>pip install uwsgitop </p>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>uwsgitop /tmp/stats.sock</p>
+<h2 id="plugins使用"><a href="#plugins使用" class="headerlink" title="plugins使用"></a>plugins使用</h2><h3 id="fastrouter"><a href="#fastrouter" class="headerlink" title="fastrouter"></a>fastrouter</h3><p>这是一个负载均衡插件，比如说四个uwsgi节点提供服务，这样在nginx上面可以配置成upstream，分流到四个uwsgi服务上，但是如果是上线，或者有一个节点挂掉了怎么办，只能是收到500报警在手动剔除吗？ to yung to sample!! 当然不是，这个时候就用到fastrouter了。<br>看<a href="http://uwsgi-docs-cn.readthedocs.io/zh_CN/latest/Fastrouter.html?highlight=fast">官网</a></p>
+<blockquote>
+<p>For advanced setups uWSGI includes the “fastrouter” plugin, a proxy/load-balancer/router speaking the uwsgi protocol. It is built in by default. You can put it between your webserver and real uWSGI instances to have more control over the routing of HTTP requests to your application servers.</p>
+</blockquote>
+<p>它的功能proxy/load-banlance/router<br>简述一下配置：</p>
+<p><strong>nginx配置</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">location &#x2F;test &#123;</span><br><span class="line">        include    uwsgi_params;</span><br><span class="line">        uwsgi_pass 127.0.0.1:3030;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>fastrouter-server端配置</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;uwsgi id &#x3D; &quot;fastrouter&quot;&gt;</span><br><span class="line">    &lt;fastrouter&gt;127.0.0.1:3030&lt;&#x2F;fastrouter&gt;</span><br><span class="line">    &lt;fastrouter-subscription-server&gt;127.0.0.1:3131&lt;&#x2F;fastrouter-subscription-server&gt;</span><br><span class="line">    &lt;enable-threads&#x2F;&gt;</span><br><span class="line">    &lt;master&#x2F;&gt;</span><br><span class="line">    &lt;fastrouter-stats&gt;127.0.0.1:9595&lt;&#x2F;fastrouter-stats&gt;</span><br><span class="line">&lt;&#x2F;uwsgi&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>3030为当前uWSGI fastrouter server的端口，前面的空代表当前主机地址。（nginx会用到这个端口）</li>
+<li>3131fastrouter-subscription-server 表示当前uWSGI fastrouter server的订阅地址。（web应用服务会用到）</li>
+<li>stats：uWSGI的统计服务机制，访问会返回一个json对象，都是<a href="http://uwsgi-docs.readthedocs.io/en/latest/StatsServer.html">状态统计信息</a> 格式可以是一个端口，也可以是一个socket</li>
+</ul>
+<p><strong>uwsgi实例配置</strong></p>
+<p>实例1</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;uwsgi id &#x3D; &quot;subserver1&quot;&gt;</span><br><span class="line">    &lt;stats&gt;127.0.0.1:9393&lt;&#x2F;stats&gt;</span><br><span class="line">    &lt;processes&gt;4&lt;&#x2F;processes&gt;</span><br><span class="line">    &lt;enable-threads&#x2F;&gt;</span><br><span class="line">    &lt;memory-report&#x2F;&gt;</span><br><span class="line">    &lt;subscribe-to&gt;127.0.0.1:3131:test&lt;&#x2F;subscribe-to&gt;</span><br><span class="line">    &lt;socket&gt;127.0.0.1:3232&lt;&#x2F;socket&gt;</span><br><span class="line">    &lt;file&gt;.&#x2F;server.py&lt;&#x2F;file&gt;</span><br><span class="line">    &lt;master&#x2F;&gt;</span><br><span class="line">    &lt;weight&gt;8&lt;&#x2F;weight&gt;</span><br><span class="line">&lt;&#x2F;uwsgi&gt;</span><br></pre></td></tr></table></figure>
+<p>实例2</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;uwsgi id &#x3D; &quot;subserver2&quot;&gt;</span><br><span class="line">    &lt;stats&gt;127.0.0.1:9494&lt;&#x2F;stats&gt;</span><br><span class="line">    &lt;processes&gt;4&lt;&#x2F;processes&gt;</span><br><span class="line">    &lt;enable-threads&#x2F;&gt;</span><br><span class="line">    &lt;memory-report&#x2F;&gt;</span><br><span class="line">    &lt;subscribe-to&gt;127.0.0.1:3131:test&lt;&#x2F;subscribe-to&gt;</span><br><span class="line">    &lt;socket&gt;127.0.0.1:3333&lt;&#x2F;socket&gt;</span><br><span class="line">    &lt;file&gt;.&#x2F;server.py&lt;&#x2F;file&gt;</span><br><span class="line">    &lt;master&#x2F;&gt;</span><br><span class="line">    &lt;weight&gt;2&lt;&#x2F;weight&gt;</span><br><span class="line">&lt;&#x2F;uwsgi&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><stats>127.0.0.1:9494</stats> 这个可以把9494改为0 则为自动分配 也可以改成socket</p>
+</li>
+<li><p>我们通过subscribe-to变量来订阅fastrouter server（127.0.0.1:3131）,冒号后跟着的是对应请求的域名，只有来自当前域名的请求才会进入当前web节点。当然这个可以设置多个subscribe-to，例如：subscribe-to=127.0.0.1:3131:test1</p>
+</li>
+<li><p>weight 权重分配</p>
+</li>
+</ul>
+<p>由于我们线上使用的是fastrouter,所以在这儿就只说了这个，其实uwsgi的负载均衡使用不只有这一种手段<br>有兴趣可以看下<a href="http://www.cnblogs.com/codeape/p/4064815.html">这篇博文</a></p>
+<h3 id="harakiri"><a href="#harakiri" class="headerlink" title="harakiri"></a>harakiri</h3>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/uwsgi/" rel="tag"># uwsgi</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/12/%E8%AE%B0%E5%BD%95%E4%B8%BB%E6%9C%BAhistory/" rel="prev" title="记录主机history">
+      <i class="fa fa-chevron-left"></i> 记录主机history
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/13/MySQL%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/" rel="next" title="MySQL使用记录">
+      MySQL使用记录 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装配置"><span class="nav-number">2.</span> <span class="nav-text">安装配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#uwsgitop"><span class="nav-number">3.</span> <span class="nav-text">uwsgitop</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#部署"><span class="nav-number">3.1.</span> <span class="nav-text">部署</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用"><span class="nav-number">3.2.</span> <span class="nav-text">使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#plugins使用"><span class="nav-number">4.</span> <span class="nav-text">plugins使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#fastrouter"><span class="nav-number">4.1.</span> <span class="nav-text">fastrouter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#harakiri"><span class="nav-number">4.2.</span> <span class="nav-text">harakiri</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="数据库现在为止我只接触过MySQL，MySQL自从被oracle收购后，就衍生出三大阵营，Drizzle、MariaDB和Percona Server（包括XtraDB引擎），第一个没接触过不太了解，MariaDB与percona又有很多相似点，比如都支持XtraDB（innodb加强版）看看两者优缺点：  Percona团队的最终声明是“Percona Server是由Oracle发布的最接近官">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL使用记录">
+<meta property="og:url" content="https://fanquqi.github.io/2017/07/13/MySQL%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="数据库现在为止我只接触过MySQL，MySQL自从被oracle收购后，就衍生出三大阵营，Drizzle、MariaDB和Percona Server（包括XtraDB引擎），第一个没接触过不太了解，MariaDB与percona又有很多相似点，比如都支持XtraDB（innodb加强版）看看两者优缺点：  Percona团队的最终声明是“Percona Server是由Oracle发布的最接近官">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-07-13T08:02:23.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.985Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/07/13/MySQL%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>MySQL使用记录 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/07/13/MySQL%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL使用记录
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-07-13 16:02:23" itemprop="dateCreated datePublished" datetime="2017-07-13T16:02:23+08:00">2017-07-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>数据库现在为止我只接触过MySQL，MySQL自从被oracle收购后，就衍生出三大阵营，Drizzle、MariaDB和Percona Server（包括XtraDB引擎），第一个没接触过不太了解，MariaDB与percona又有很多相似点，比如都支持XtraDB（innodb加强版）<br>看看两者优缺点：</p>
+<ul>
+<li>Percona团队的最终声明是“Percona Server是由Oracle发布的最接近官方MySQL Enterprise发行版的版本”，因此与其他更改了大量基本核心MySQL代码的分支有所区别。</li>
+<li>XtraDB 存储引擎是完全的向下兼容，在 MariaDB 中，XtraDB 存储引擎被标识为”ENGINE=InnoDB”，这个与 InnoDB 是一样的，所以你可以直接用XtraDB 替换掉 InnoDB 而不会产生任何问题。</li>
+<li>MariaDB的目的是完全兼容MySQL，包括API和命令行，使之能轻松成为MySQL的代替品。在存储引擎方面，10.0.9版起使用XtraDB（名称代号为Aria）来代替MySQL的InnoDB。</li>
+<li>Percona Server的一个缺点是他们自己管理代码，不接受外部开发人员的贡献，以这种方式确保他们对产品中所包含功能的控制。</li>
+</ul>
+<p>总之，二者目前为止没有拉开什么差距，所以可以自由选择。<br>阿里使用的percona 但是Google使用的MariaDB。。。</p>
+<p>我也是用的percona。下边以它为例说明。</p>
+<p>数据库也是个比较大的技术栈，三言两语说不完，工具书都特别厚，我写这篇文章的目的无非就是想给自己一个查看SQL语句的地方，见识比较少，有错误我肯定不是故意的，全文参考这个<a href="http://lib.csdn.net/maquealone/352262/chart/MySQL">技能图谱</a></p>
+<h1 id="安装部署"><a href="#安装部署" class="headerlink" title="安装部署"></a>安装部署</h1><p>直接yum就可以，国内有清华源，中科院源，比较快，官网下载简直是灾难。<br>可以写ansible-playbook，没有难点不多说。</p>
+<h2 id="配置文件详解"><a href="#配置文件详解" class="headerlink" title="配置文件详解"></a>配置文件详解</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br></pre></td><td class="code"><pre><span class="line">[mysqld3306]</span><br><span class="line"></span><br><span class="line"># 为PXC定制</span><br><span class="line">binlog_format&#x3D;ROW</span><br><span class="line">default-storage-engine         &#x3D; InnoDB</span><br><span class="line">innodb_autoinc_lock_mode&#x3D;2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 绑定地址之后只能通过内部网络访问</span><br><span class="line"></span><br><span class="line">bind-address&#x3D;10.******</span><br><span class="line"></span><br><span class="line">auto-increment-increment &#x3D; 2</span><br><span class="line">auto-increment-offset &#x3D; 1</span><br><span class="line"></span><br><span class="line"># 使用 xtrabackup-v2 必须制定datadir, 因为操作可能直接对 datadir进行</span><br><span class="line">datadir&#x3D;&#x2F;home&#x2F;mysql&#x2F;3306&#x2F;data</span><br><span class="line"></span><br><span class="line"># http:&#x2F;&#x2F;www.percona.com&#x2F;doc&#x2F;percona-xtrabackup&#x2F;2.2&#x2F;innobackupex&#x2F;privileges.html#permissions-and-privileges-needed</span><br><span class="line"># 权限的配置</span><br><span class="line"># xtrapbackup在Donor上执行，因此只需localhost的权限</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 约定:</span><br><span class="line">server-id &#x3D; 1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># wsrep模式不依赖于GTID</span><br><span class="line"># 开启GTID</span><br><span class="line"># enforce_gtid_consistency&#x3D;1</span><br><span class="line"># gtid_mode&#x3D;on</span><br><span class="line"></span><br><span class="line"># 即便临时作为Slave，也记录自己的binlog</span><br><span class="line">log-slave-updates&#x3D;1</span><br><span class="line"></span><br><span class="line"># master_info_repository&#x3D;TABLE</span><br><span class="line"># relay_log_info_repository&#x3D;TABLE</span><br><span class="line"></span><br><span class="line"># GENERAL #</span><br><span class="line">user                           &#x3D; mysql</span><br><span class="line">port                           &#x3D; 3306</span><br><span class="line">socket                         &#x3D; &#x2F;home&#x2F;mysql&#x2F;3306&#x2F;mysql.sock</span><br><span class="line">pid-file                       &#x3D; &#x2F;home&#x2F;mysql&#x2F;3306&#x2F;mysql.pid</span><br><span class="line"></span><br><span class="line"># MyISAM #</span><br><span class="line">key-buffer-size                &#x3D; 32M</span><br><span class="line">myisam-recover                 &#x3D; FORCE,BACKUP</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ft-min-word-len &#x3D; 4</span><br><span class="line">event-scheduler &#x3D; 0</span><br><span class="line"></span><br><span class="line"># SAFETY #</span><br><span class="line">max-allowed-packet             &#x3D; 16M</span><br><span class="line"></span><br><span class="line">skip-name-resolve</span><br><span class="line">max_connections &#x3D; 2000</span><br><span class="line">max_connect_errors &#x3D; 30</span><br><span class="line"></span><br><span class="line">back-log &#x3D; 500</span><br><span class="line"></span><br><span class="line">character-set-client-handshake &#x3D; 1</span><br><span class="line">character-set-server &#x3D; utf8mb4</span><br><span class="line">collation-server &#x3D; utf8mb4_unicode_ci</span><br><span class="line"></span><br><span class="line">#character-set-client-handshake&#x3D;1</span><br><span class="line">#character-set-client&#x3D;utf8</span><br><span class="line">#character-set-server&#x3D;utf8</span><br><span class="line">#collation-server&#x3D;utf8_general_ci</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#key-buffer-size &#x3D; 256M</span><br><span class="line">table-open-cache &#x3D; 2048</span><br><span class="line">max-allowed-packet &#x3D; 2048M</span><br><span class="line">slave-skip-errors &#x3D; all                       #Skip duplicated key</span><br><span class="line">sort-buffer-size &#x3D; 4M</span><br><span class="line">join-buffer-size &#x3D; 8M</span><br><span class="line">thread-cache-size &#x3D; 50</span><br><span class="line">concurrent-insert &#x3D; 2</span><br><span class="line"></span><br><span class="line">thread-stack &#x3D; 192K</span><br><span class="line">net-buffer-length &#x3D; 8K</span><br><span class="line">read-buffer-size &#x3D; 256K</span><br><span class="line">read-rnd-buffer-size &#x3D; 16M</span><br><span class="line">bulk-insert-buffer-size &#x3D; 64M</span><br><span class="line"></span><br><span class="line"># 采用thread pool来处理连接</span><br><span class="line">thread_handling&#x3D;pool-of-threads</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sql-mode                       &#x3D; STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY</span><br><span class="line">sysdate-is-now                 &#x3D; 1</span><br><span class="line">innodb                         &#x3D; FORCE</span><br><span class="line">innodb-strict-mode             &#x3D; 1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># BINARY LOGGING #</span><br><span class="line">log-bin                        &#x3D; &#x2F;home&#x2F;mysql&#x2F;3306&#x2F;data&#x2F;mysql-bin</span><br><span class="line">expire-logs-days               &#x3D; 5</span><br><span class="line"># LOGGING #</span><br><span class="line"># log-output&#x3D;file 默认就是FILE</span><br><span class="line">log-error                      &#x3D; &#x2F;home&#x2F;mysql&#x2F;3306&#x2F;data&#x2F;mysql-error.log</span><br><span class="line">long-query-time &#x3D; 0.3</span><br><span class="line"># log-queries-not-using-indexes  &#x3D; 1</span><br><span class="line">slow-query-log                 &#x3D; 1</span><br><span class="line">slow-query-log-file            &#x3D; &#x2F;home&#x2F;mysql&#x2F;3306&#x2F;data&#x2F;mysql-slow.log</span><br><span class="line"></span><br><span class="line"># 默认为0(MySQL不控制binlog的输出)</span><br><span class="line"># sync-binlog                    &#x3D; 1</span><br><span class="line"></span><br><span class="line"># CACHES AND LIMITS #</span><br><span class="line"></span><br><span class="line">tmp-table-size                 &#x3D; 32M</span><br><span class="line">max-heap-table-size            &#x3D; 32M</span><br><span class="line"></span><br><span class="line"># 频繁修改的表不适合做query-cache, 否则反而影响效率</span><br><span class="line">query-cache-type               &#x3D; 0</span><br><span class="line">query-cache-size               &#x3D; 0</span><br><span class="line"># query-cache-limit &#x3D; 2M</span><br><span class="line"># query-cache-min-res-unit &#x3D; 512</span><br><span class="line"></span><br><span class="line">thread-cache-size              &#x3D; 100</span><br><span class="line">open-files-limit               &#x3D; 65535</span><br><span class="line">table-definition-cache         &#x3D; 1024</span><br><span class="line">table-open-cache               &#x3D; 4096</span><br><span class="line"></span><br><span class="line"># INNODB #</span><br><span class="line">innodb-flush-method            &#x3D; O_DIRECT</span><br><span class="line">innodb-log-files-in-group      &#x3D; 2</span><br><span class="line"></span><br><span class="line"># innodb-file-per-table &#x3D; 1设置之后， 下面的配置基本失效</span><br><span class="line">innodb_data_file_path &#x3D; ibdata1:10M:autoextend</span><br><span class="line">innodb-thread-concurrency &#x3D; 32</span><br><span class="line">innodb-log-file-size           &#x3D; 256M</span><br><span class="line">innodb-flush-log-at-trx-commit &#x3D; 2</span><br><span class="line">innodb-file-per-table          &#x3D; 1</span><br><span class="line"># 内存: 全部内存*0.7</span><br><span class="line">innodb-buffer-pool-size &#x3D; 25G</span><br><span class="line"></span><br><span class="line">performance-schema &#x3D; 0</span><br><span class="line">net-read-timeout &#x3D; 60</span><br><span class="line"></span><br><span class="line"># innodb-open-files 在MySQL5.6 auto-sized</span><br><span class="line"># 来自May2</span><br><span class="line">innodb-rollback-on-timeout</span><br><span class="line">innodb-status-file &#x3D; 1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># http:&#x2F;&#x2F;dev.mysql.com&#x2F;doc&#x2F;refman&#x2F;5.6&#x2F;en&#x2F;innodb-performance-multiple_io_threads.html</span><br><span class="line"># http:&#x2F;&#x2F;zhan.renren.com&#x2F;formysql?tagId&#x3D;3942&amp;checked&#x3D;true</span><br><span class="line"># 从MySQL 5.5</span><br><span class="line"># innodb_file_io_threads &#x3D; 4</span><br><span class="line">innodb-read-io-threads &#x3D; 16</span><br><span class="line">innodb-write-io-threads &#x3D; 8</span><br><span class="line"></span><br><span class="line">innodb-io-capacity &#x3D; 2000</span><br><span class="line"># innodb-stats-update-need-lock &#x3D; 0 # MySQL 5.6中无效</span><br><span class="line"># innodb-stats-auto-update &#x3D; 0</span><br><span class="line">innodb-old-blocks-pct &#x3D; 75</span><br><span class="line"># innodb-adaptive-flushing-method &#x3D; &quot;estimate&quot;</span><br><span class="line"># innodb-adaptive-flushing &#x3D; 1</span><br><span class="line"></span><br><span class="line"># https:&#x2F;&#x2F;www.facebook.com&#x2F;notes&#x2F;mysql-at-facebook&#x2F;repeatable-read-versus-read-committed-for-innodb&#x2F;244956410932</span><br><span class="line"># READ-COMMITTED 每次QUERY都要求调用: read_view_open_now, 而REPEATABLE-READ每次Transaction中只要求一次</span><br><span class="line"># REPEATABLE-READ 会导致读写不同步</span><br><span class="line">transaction-isolation &#x3D; READ-COMMITTED</span><br><span class="line"></span><br><span class="line">innodb-sync-spin-loops &#x3D; 100</span><br><span class="line">innodb-spin-wait-delay &#x3D; 30</span><br><span class="line"></span><br><span class="line">innodb-file-format &#x3D; &quot;Barracuda&quot;</span><br><span class="line">innodb-file-format-max &#x3D; &quot;Barracuda&quot;</span><br></pre></td></tr></table></figure>
+
+<h1 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h1><blockquote>
+<p>日常操作无非就是增删改查。也可分为库层面操作，与表层面操作。</p>
+</blockquote>
+<h2 id="库操作"><a href="#库操作" class="headerlink" title="库操作"></a>库操作</h2><p>一般库操作很少，没有什么花样</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># 创建数据库</span><br><span class="line">create database online_database;        </span><br><span class="line"># 查看数据库</span><br><span class="line">show databases;  </span><br><span class="line"># 查看数据库信息    </span><br><span class="line">show create database online_database;</span><br><span class="line"># 修改数据库的编码，可使用上一条语句查看是否修改成功</span><br><span class="line">alter database online_database default character set gbk collate gbk_bin;      </span><br><span class="line"># 删除数据库</span><br><span class="line">drop database online_database;</span><br></pre></td></tr></table></figure>
+
+<h1 id="表操作"><a href="#表操作" class="headerlink" title="表操作"></a>表操作</h1><h3 id="建表"><a href="#建表" class="headerlink" title="建表"></a>建表</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">create table IF NOT EXISTS qbus_log_collect_state (</span><br><span class="line">    id int primary key not null auto_increment, </span><br><span class="line">    host varchar(50) not null default &#39;&#39;, </span><br><span class="line">    cluster varchar(50) not null default &#39;&#39;,</span><br><span class="line">    topic varchar(100) not null default &#39;&#39;, </span><br><span class="line">    state int not null default 0, </span><br><span class="line">    log_path varchar(100) not null default &#39;&#39;)，</span><br><span class="line">    update_time ;</span><br></pre></td></tr></table></figure>
+
+<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><pre><code>insert into table_name (id,count) value (1,2);</code></pre><h3 id="去重插入"><a href="#去重插入" class="headerlink" title="去重插入"></a>去重插入</h3><pre><code>REPLACE INTO `table_name`(`col_name`, ...) VALUES (...);</code></pre><h3 id="删除表某条数据-where-必须加，不然删除掉全表所有数据，谨慎"><a href="#删除表某条数据-where-必须加，不然删除掉全表所有数据，谨慎" class="headerlink" title="删除表某条数据(where 必须加，不然删除掉全表所有数据，谨慎)"></a>删除表某条数据(where 必须加，不然删除掉全表所有数据，谨慎)</h3><pre><code>delete from table_name where id=1;</code></pre><h3 id="删除表"><a href="#删除表" class="headerlink" title="删除表"></a>删除表</h3><pre><code>drop table table_name；</code></pre><h4 id="快速删表"><a href="#快速删表" class="headerlink" title="快速删表"></a>快速删表</h4><p>ln xxx.ibd xxx.ibd_bak</p>
+<p>drop table xxx</p>
+<p>rm -f xxx.ibd_bak</p>
+<h3 id="删表数据，不删表结构（下边两个SQL，TRUNCATE-会删除自增字段记录，而delete不会）"><a href="#删表数据，不删表结构（下边两个SQL，TRUNCATE-会删除自增字段记录，而delete不会）" class="headerlink" title="删表数据，不删表结构（下边两个SQL，TRUNCATE 会删除自增字段记录，而delete不会）"></a>删表数据，不删表结构（下边两个SQL，TRUNCATE 会删除自增字段记录，而delete不会）</h3><pre><code>TRUNCATE TABLE table_name;
+delete from table_name;</code></pre><h3 id="查询"><a href="#查询" class="headerlink" title="查询"></a>查询</h3><pre><code>select * from table_name;</code></pre><p>查询数据直接追加到文件中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -s -N -h10.108.93.250 -uuser -p -P3306 database_name -e &#39;select topic_name,cluster_name,log_path,hdfs_path from log_info where cluster_name in (&quot;bjyt_priv_huajiao&quot;,&quot;bjyt_priv_huajiao2&quot;);&#39; &gt; huaojiao_log_path.txt</span><br></pre></td></tr></table></figure>
+
+<h3 id="去重查询"><a href="#去重查询" class="headerlink" title="去重查询"></a>去重查询</h3><pre><code>select distinct col_name,values from table_name;</code></pre><h3 id="按照时间查询"><a href="#按照时间查询" class="headerlink" title="按照时间查询"></a>按照时间查询</h3><pre><code>&quot;update_time&quot;为表中更新时间字段，curdate() 为获取当前时间的函数 可以使用 + - 来控制前后几天 
+select * from qbus_topic_info where date(update_time) = curdate()-1;    </code></pre><h3 id="查找重复数据"><a href="#查找重复数据" class="headerlink" title="查找重复数据"></a>查找重复数据</h3><pre><code>select COUNT(*) as repetitions, cluster_name,topic_name from topic_flow_daily where date=&quot;2017-11-9&quot; group by cluster_name,topic_name HAVING repetitions &gt; 1;    </code></pre><h3 id="添加唯一约束（联合唯一约束）"><a href="#添加唯一约束（联合唯一约束）" class="headerlink" title="添加唯一约束（联合唯一约束）"></a>添加唯一约束（联合唯一约束）</h3><h4 id="需要在表中没有重复数据的情况下，否则加不上去"><a href="#需要在表中没有重复数据的情况下，否则加不上去" class="headerlink" title="需要在表中没有重复数据的情况下，否则加不上去"></a>需要在表中没有重复数据的情况下，否则加不上去</h4><pre><code>ALTER TABLE jw_resource ADD UNIQUE KEY(resource_name, resource_type);</code></pre><h3 id="添加字段"><a href="#添加字段" class="headerlink" title="添加字段"></a>添加字段</h3><pre><code>alter table &apos;user_movement_log&apos; Add column GatewayId int not null default 0 AFTER &apos;Regionid&apos;;</code></pre><h3 id="删除字段"><a href="#删除字段" class="headerlink" title="删除字段"></a>删除字段</h3><pre><code>ALTER TABLE testalter_tbl  DROP i;</code></pre><h3 id="更改字段"><a href="#更改字段" class="headerlink" title="更改字段"></a>更改字段</h3><pre><code>alter table topic_flow_daily change  total_request total_requests bigint not null default 0;</code></pre><p>z</p>
+<p>#索引<br>B树，B+树 ：<br><a href="https://zhuanlan.zhihu.com/p/27700617">https://zhuanlan.zhihu.com/p/27700617</a><br><a href="http://blog.codinglabs.org/articles/theory-of-mysql-index.html">http://blog.codinglabs.org/articles/theory-of-mysql-index.html</a></p>
+<p>#索引优化</p>
+<p><a href="http://blog.codinglabs.org/articles/theory-of-mysql-index.html">http://blog.codinglabs.org/articles/theory-of-mysql-index.html</a></p>
+<p><a href="http://blog.codinglabs.org/articles/index-condition-pushdown.html">http://blog.codinglabs.org/articles/index-condition-pushdown.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/mysql/" rel="tag"># mysql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/13/uwsgi%E7%AC%94%E8%AE%B0/" rel="prev" title="uwsgi笔记">
+      <i class="fa fa-chevron-left"></i> uwsgi笔记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/18/socket%E8%A7%A3%E8%AF%BB/" rel="next" title="socket解读">
+      socket解读 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#安装部署"><span class="nav-number">1.</span> <span class="nav-text">安装部署</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#配置文件详解"><span class="nav-number">1.1.</span> <span class="nav-text">配置文件详解</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#基本操作"><span class="nav-number">2.</span> <span class="nav-text">基本操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#库操作"><span class="nav-number">2.1.</span> <span class="nav-text">库操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表操作"><span class="nav-number">3.</span> <span class="nav-text">表操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#建表"><span class="nav-number">3.0.1.</span> <span class="nav-text">建表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#插入数据"><span class="nav-number">3.0.2.</span> <span class="nav-text">插入数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#去重插入"><span class="nav-number">3.0.3.</span> <span class="nav-text">去重插入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除表某条数据-where-必须加，不然删除掉全表所有数据，谨慎"><span class="nav-number">3.0.4.</span> <span class="nav-text">删除表某条数据(where 必须加，不然删除掉全表所有数据，谨慎)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除表"><span class="nav-number">3.0.5.</span> <span class="nav-text">删除表</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#快速删表"><span class="nav-number">3.0.5.1.</span> <span class="nav-text">快速删表</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删表数据，不删表结构（下边两个SQL，TRUNCATE-会删除自增字段记录，而delete不会）"><span class="nav-number">3.0.6.</span> <span class="nav-text">删表数据，不删表结构（下边两个SQL，TRUNCATE 会删除自增字段记录，而delete不会）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查询"><span class="nav-number">3.0.7.</span> <span class="nav-text">查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#去重查询"><span class="nav-number">3.0.8.</span> <span class="nav-text">去重查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#按照时间查询"><span class="nav-number">3.0.9.</span> <span class="nav-text">按照时间查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查找重复数据"><span class="nav-number">3.0.10.</span> <span class="nav-text">查找重复数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#添加唯一约束（联合唯一约束）"><span class="nav-number">3.0.11.</span> <span class="nav-text">添加唯一约束（联合唯一约束）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#需要在表中没有重复数据的情况下，否则加不上去"><span class="nav-number">3.0.11.1.</span> <span class="nav-text">需要在表中没有重复数据的情况下，否则加不上去</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#添加字段"><span class="nav-number">3.0.12.</span> <span class="nav-text">添加字段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除字段"><span class="nav-number">3.0.13.</span> <span class="nav-text">删除字段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更改字段"><span class="nav-number">3.0.14.</span> <span class="nav-text">更改字段</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

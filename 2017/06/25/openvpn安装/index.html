@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="openvpn不多作介绍，直接上部署过程  服务器环境 机器名：host01 操作系统：CentOS Linux release 7.0.1406 (Core) 内网IP：10.** 外网IP：12.** 安装方式：yum openvpn版本：OpenVPN 2.3.12 x86_64-redhat-linux-gnu  安装步骤安装前操作关闭selinux 配置防火墙 12345setenfo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="openvpn安装">
+<meta property="og:url" content="https://fanquqi.github.io/2017/06/25/openvpn%E5%AE%89%E8%A3%85/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="openvpn不多作介绍，直接上部署过程  服务器环境 机器名：host01 操作系统：CentOS Linux release 7.0.1406 (Core) 内网IP：10.** 外网IP：12.** 安装方式：yum openvpn版本：OpenVPN 2.3.12 x86_64-redhat-linux-gnu  安装步骤安装前操作关闭selinux 配置防火墙 12345setenfo">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-06-25T01:58:40.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.002Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="openvpn">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/06/25/openvpn%E5%AE%89%E8%A3%85/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>openvpn安装 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/06/25/openvpn%E5%AE%89%E8%A3%85/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          openvpn安装
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-06-25 09:58:40" itemprop="dateCreated datePublished" datetime="2017-06-25T09:58:40+08:00">2017-06-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E5%9F%BA%E7%A1%80%E8%BF%90%E7%BB%B4/" itemprop="url" rel="index"><span itemprop="name">基础运维</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>openvpn不多作介绍，直接上部署过程</p>
+</blockquote>
+<h1 id="服务器环境"><a href="#服务器环境" class="headerlink" title="服务器环境"></a>服务器环境</h1><ul>
+<li>机器名：host01</li>
+<li>操作系统：CentOS Linux release 7.0.1406 (Core)</li>
+<li>内网IP：10.<strong>**</strong></li>
+<li>外网IP：12.<strong>**</strong></li>
+<li>安装方式：yum</li>
+<li>openvpn版本：OpenVPN 2.3.12 x86_64-redhat-linux-gnu</li>
+</ul>
+<h1 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h1><h2 id="安装前操作"><a href="#安装前操作" class="headerlink" title="安装前操作"></a>安装前操作</h2><p><code>关闭selinux 配置防火墙</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">setenforce 0</span><br><span class="line">sed -i &#39;&#x2F;^SELINUX&#x3D;&#x2F;c\SELINUX&#x3D;disabled&#39; &#x2F;etc&#x2F;selinux&#x2F;config</span><br><span class="line">iptables -I INPUT -p udp --dport 1194 -m comment --comment &quot;openvpn&quot; -j ACCEPT</span><br><span class="line">iptables -t nat -A POSTROUTING -s 10.8.0.0&#x2F;24 -j MASQUERADE </span><br><span class="line">service iptables save</span><br></pre></td></tr></table></figure>
+
+<p><code>开启路由转发功能</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sed -i &#39;&#x2F;net.ipv4.ip_forward&#x2F;s&#x2F;0&#x2F;1&#x2F;&#39; &#x2F;etc&#x2F;sysctl.conf</span><br><span class="line">echo &quot;1&quot;&gt;&#x2F;proc&#x2F;sys&#x2F;net&#x2F;ipv4&#x2F;ip_forward</span><br><span class="line">sysctl -p</span><br></pre></td></tr></table></figure>
+<p><code>安装openssl，lzo</code>（用于压缩通讯数据，加快传输速度）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install openssl openssl-delvel</span><br><span class="line">yum install lzo</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装步骤-1"><a href="#安装步骤-1" class="headerlink" title="安装步骤"></a>安装步骤</h2><p><code>安装配置openvpn和easy-rsa</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install openvpn easy-rsa</span><br></pre></td></tr></table></figure>
+
+<p><code>修改vars文件</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">cat &#x2F;usr&#x2F;share&#x2F;easy-rsa&#x2F;2.0&#x2F;vars | grep -Ev &quot;^$|#&quot;</span><br><span class="line">export EASY_RSA&#x3D;&quot;&#96;pwd&#96;&quot;</span><br><span class="line">export OPENSSL&#x3D;&quot;openssl&quot;</span><br><span class="line">export PKCS11TOOL&#x3D;&quot;pkcs11-tool&quot;</span><br><span class="line">export GREP&#x3D;&quot;grep&quot;</span><br><span class="line">export KEY_CONFIG&#x3D;&#96;$EASY_RSA&#x2F;whichopensslcnf $EASY_RSA&#96;</span><br><span class="line">export KEY_DIR&#x3D;&quot;$EASY_RSA&#x2F;keys&quot;</span><br><span class="line">echo NOTE: If you run .&#x2F;clean-all, I will be doing a rm -rf on $KEY_DIR</span><br><span class="line">export PKCS11_MODULE_PATH&#x3D;&quot;dummy&quot;</span><br><span class="line">export PKCS11_PIN&#x3D;&quot;dummy&quot;</span><br><span class="line">export KEY_SIZE&#x3D;2048</span><br><span class="line">export CA_EXPIRE&#x3D;3650</span><br><span class="line">export KEY_EXPIRE&#x3D;3650</span><br><span class="line">export KEY_COUNTRY&#x3D;&quot;CN&quot;</span><br><span class="line">export KEY_PROVINCE&#x3D;&quot;CA&quot;</span><br><span class="line">export KEY_CITY&#x3D;&quot;Bei Jing&quot;</span><br><span class="line">export KEY_ORG&#x3D;&quot;Fort-Funston&quot;</span><br><span class="line">export KEY_EMAIL&#x3D;&quot;me@myhost.mydomain&quot;</span><br><span class="line">export KEY_OU&#x3D;&quot;MyOrganizationalUnit&quot;</span><br><span class="line">export KEY_NAME&#x3D;&quot;EasyRSA&quot;       </span><br><span class="line"></span><br><span class="line">**copy easy_rsa目录**</span><br><span class="line"></span><br><span class="line">cp -r &#x2F;usr&#x2F;share&#x2F;easy-rsa&#x2F;2.0&#x2F;* &#x2F;etc&#x2F;openvpn&#x2F;</span><br></pre></td></tr></table></figure>
+
+
+<p>初始化环境变量</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">source vars</span><br></pre></td></tr></table></figure>
+
+<p>清除keys目录下所有与证书相关的文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;clean-all</span><br></pre></td></tr></table></figure>
+
+<p>生成根证书ca.crt 根秘钥ca.key（一路回车）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;build-ca</span><br></pre></td></tr></table></figure>
+
+<p>为服务端生成证书秘钥（一路回车）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;build-key-server server</span><br></pre></td></tr></table></figure>
+
+<p>创建迪菲·赫尔曼密钥，会生成dh2048.pem文件（过程比较慢）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;build-dh</span><br></pre></td></tr></table></figure>
+
+<p>生成ta.key（防DOS攻击，等）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openvpn --genkey --secret keys&#x2F;ta.key</span><br></pre></td></tr></table></figure>
+
+<p>创建服务端配置文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">在openvpn目录下创建一个keys目录</span><br><span class="line">mkdir &#x2F;etc&#x2F;openvpn&#x2F;keys</span><br></pre></td></tr></table></figure>
+
+<p>复制一份刚创建好的证书秘钥到新创建的keys</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp &#x2F;usr&#x2F;share&#x2F;easy-rsa&#x2F;2.0&#x2F;keys&#x2F;&#123;ca.crt,server.&#123;crt,key&#125;,dh2048.pem,ta.key&#125; &#x2F;etc&#x2F;openvpn&#x2F;keys&#x2F;</span><br></pre></td></tr></table></figure>
+
+<p>复制一份配置文件模板到/etc/openvpn/</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp &#x2F;usr&#x2F;share&#x2F;doc&#x2F;openvpn-2.3.12&#x2F;sample&#x2F;sample-config-files&#x2F;server.conf &#x2F;etc&#x2F;openvpn&#x2F;</span><br></pre></td></tr></table></figure>
+
+<p>修改一下配置文件(这里使用的udp,会比tcp更快一下)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[root@vpn ~]# cat &#x2F;etc&#x2F;openvpn&#x2F;server.conf | grep -Ev &quot;^#|;|^$&quot;</span><br><span class="line">port 1194</span><br><span class="line">proto udp</span><br><span class="line">dev tun</span><br><span class="line">ca keys&#x2F;ca.crt</span><br><span class="line">cert keys&#x2F;server.crt</span><br><span class="line">key keys&#x2F;server.key  # This file should be kept secret</span><br><span class="line">dh keys&#x2F;dh2048.pem</span><br><span class="line">server 10.8.3.0 255.255.255.0</span><br><span class="line">ifconfig-pool-persist ipp.txt</span><br><span class="line">push &quot;route 10.0.0.0 255.0.0.0&quot;</span><br><span class="line">keepalive 10 120</span><br><span class="line">tls-auth keys&#x2F;ta.key 0 # This file is secret</span><br><span class="line">comp-lzo</span><br><span class="line">persist-key</span><br><span class="line">persist-tun</span><br><span class="line">status openvpn-status.log</span><br><span class="line">log         openvpn.log</span><br><span class="line">verb 5</span><br></pre></td></tr></table></figure>
+
+<h2 id="openvpn启动"><a href="#openvpn启动" class="headerlink" title="openvpn启动"></a>openvpn启动</h2><p>systemctl -f enable <a href="mailto:openvpn@server.service">openvpn@server.service</a><br>systemctl start <a href="mailto:openvpn@server.service">openvpn@server.service</a></p>
+<h2 id="添加-删除用户"><a href="#添加-删除用户" class="headerlink" title="添加|删除用户"></a>添加|删除用户</h2><p><strong>添加用户脚本</strong>(可以使用它自动添加用户)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;bin&#x2F;bash</span><br><span class="line">vpnServer1&#x3D;10.9.104.39</span><br><span class="line">#vpnServer2&#x3D;10.12.1.28</span><br><span class="line"># a. 在vpnserver01中创建新vpn用户</span><br><span class="line">if [ -z $1 ]</span><br><span class="line">then</span><br><span class="line">  echo &quot;Error:请在脚本后添加用户名作为参数，例如：&#39;.&#x2F;01_addUser.sh zhangsan&#39;&quot;</span><br><span class="line">else</span><br><span class="line">  cp &#x2F;etc&#x2F;openvpn&#x2F;keys&#x2F;$1.crt .&#x2F; &gt; &#x2F;dev&#x2F;null 2&gt;&amp;1</span><br><span class="line">  if [ -f $1.crt ]</span><br><span class="line">  then</span><br><span class="line">    echo &quot;$1 用户已存在，请检查！&quot;</span><br><span class="line">    rm -f *.crt</span><br><span class="line">  else</span><br><span class="line"></span><br><span class="line">    cd &#x2F;etc&#x2F;openvpn&#x2F; &amp;&amp; pwd &amp;&amp; source &#x2F;etc&#x2F;openvpn&#x2F;vars &amp;&amp; .&#x2F;build-key --batch $1</span><br><span class="line">#    cd &#x2F;etc&#x2F;openvpn&#x2F; &amp;&amp; pwd &amp;&amp; source &#x2F;usr&#x2F;share&#x2F;easy-rsa&#x2F;2.0&#x2F;vars &amp;&amp; .&#x2F;build-key --batch $1</span><br><span class="line">    # b. 新用户配置文件修改以及打包发送mail到用户</span><br><span class="line">    cd -</span><br><span class="line">    mkdir -p $1</span><br><span class="line">cat &lt;&lt; EOF &gt;&gt; .&#x2F;$1&#x2F;$1.ovpn</span><br><span class="line">client</span><br><span class="line">dev tun</span><br><span class="line">proto udp</span><br><span class="line">remote ****** 1194</span><br><span class="line">remote-random</span><br><span class="line">resolv-retry 10</span><br><span class="line">nobind</span><br><span class="line">persist-key</span><br><span class="line">persist-tun</span><br><span class="line">ca ca.crt</span><br><span class="line">cert $1.crt</span><br><span class="line">key $1.key</span><br><span class="line">remote-cert-tls server</span><br><span class="line">tls-auth ta.key 1</span><br><span class="line">comp-lzo</span><br><span class="line">verb 3</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">    cp &#x2F;etc&#x2F;openvpn&#x2F;keys&#x2F;&#123;ca.crt,$1.&#123;crt,key&#125;,ta.key&#125; .&#x2F;$1&#x2F;</span><br><span class="line"></span><br><span class="line">#    cp &#x2F;etc&#x2F;openvpn&#x2F;keys&#x2F;$1.&#123;crt,key&#125; &#x2F;home&#x2F;chunyu_sys&#x2F;workspace&#x2F;cy_ansible&#x2F;roles&#x2F;vpn_agent&#x2F;files&#x2F;</span><br><span class="line">    cp README.txt .&#x2F;$1&#x2F;;cp openVPN-clinet-config-for-Mac.pdf .&#x2F;$1&#x2F;</span><br><span class="line">    cp &#x2F;etc&#x2F;hosts .&#x2F;$1&#x2F;chunyu_hosts</span><br><span class="line">    tar czf $1.tar.gz $1&#x2F;</span><br><span class="line">    rm -fr $1&#x2F;</span><br><span class="line">#    python .&#x2F;send_mail.py $1@chunyu.me &quot;[运维][vpn申请]openVPN configuration files&quot; $1.tar.gz</span><br><span class="line">#    mutt -s &quot;openVPN configuration files&quot; -a $1.tar.gz -- xiepengcheng@chunyu.me &lt; $1.tar.gz</span><br><span class="line">    #rm -f $1.tar.gz</span><br><span class="line">    echo &quot;用户 $1 创建完毕&quot;</span><br><span class="line">  fi</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+
+<p><strong>删除用户脚本</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;bin&#x2F;bash</span><br><span class="line">vpnServer1&#x3D;host01</span><br><span class="line"></span><br><span class="line">if [ -z $1 ]</span><br><span class="line">then</span><br><span class="line">  echo &quot;Error:请在脚本后添加用户名作为参数，例如：&#39;.&#x2F;02_delUser.sh zhangsan&#39;&quot;</span><br><span class="line">else</span><br><span class="line">  cp &#x2F;etc&#x2F;openvpn&#x2F;keys&#x2F;$1.crt .&#x2F;</span><br><span class="line">  if [ -f $1.crt ]</span><br><span class="line">  then</span><br><span class="line">  cd &#x2F;etc&#x2F;openvpn &amp;&amp; source vars &amp;&amp; .&#x2F;revoke-full $1</span><br><span class="line">  rm -rf &#x2F;etc&#x2F;openvpn&#x2F;keys&#x2F;$1.*</span><br><span class="line">  echo &quot;用户 $1 删除完毕&quot;</span><br><span class="line">  cd -</span><br><span class="line">  rm -f $1.crt</span><br><span class="line">  else</span><br><span class="line">    echo &quot;$1 此VPN用户不存在，请检查!&quot;</span><br><span class="line">  fi</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="使用TC进行限速"><a href="#使用TC进行限速" class="headerlink" title="使用TC进行限速"></a>使用TC进行限速</h2><p>因为大家都不遵守规则，总是把vpn带宽占满，影响别的用户使用，所以必须加以限制</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">tc qdisc add dev tun0 root handle 1:0 htb default 10</span><br><span class="line"></span><br><span class="line">tc class add dev tun0 parent 1:0 classid 1:1 htb rate 10Mbit burst 15k</span><br><span class="line"></span><br><span class="line">tc class add dev tun0 parent 1:1 classid 1:10 htb rate 640kbit ceil 640kbit burst 15k</span><br><span class="line"></span><br><span class="line">tc qdisc add dev tun0 parent 1:10 handle 10: sfq perturb 10</span><br><span class="line"></span><br><span class="line">tc filter add dev tun0 protocol ip parent 1:0 prio 3 u32 match ip dst 10.0.0.6 flowid 1:10</span><br></pre></td></tr></table></figure>
+
+<p>上面规则可以控制10.0.0.6这个用户的下载带宽为:80KB/s,以此类推限制其它用户.如果会写shell,可以作一个程序,加到openvpn的拨入脚本中.</p>
+<p>上传是在eth0(假如外网卡是eth0)上做.</p>
+<p>总结：<br>如果iptables关了，openvpn服务起了，客户端还是连不上，telnet 1194端口也不通，记得把云主机外网防火墙改一下。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/openvpn/" rel="tag"># openvpn</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/25/shell%E8%84%9A%E6%9C%AC%E6%A3%80%E6%B5%8B%E7%A1%AC%E7%9B%98/" rel="prev" title="shell脚本检测硬盘">
+      <i class="fa fa-chevron-left"></i> shell脚本检测硬盘
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/27/HTML-CSS/" rel="next" title="HTML/CSS">
+      HTML/CSS <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#服务器环境"><span class="nav-number">1.</span> <span class="nav-text">服务器环境</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装步骤"><span class="nav-number">2.</span> <span class="nav-text">安装步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#安装前操作"><span class="nav-number">2.1.</span> <span class="nav-text">安装前操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装步骤-1"><span class="nav-number">2.2.</span> <span class="nav-text">安装步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#openvpn启动"><span class="nav-number">2.3.</span> <span class="nav-text">openvpn启动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加-删除用户"><span class="nav-number">2.4.</span> <span class="nav-text">添加|删除用户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用TC进行限速"><span class="nav-number">2.5.</span> <span class="nav-text">使用TC进行限速</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

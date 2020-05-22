@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="这次迁移本来想使用docker，看了下官方给的镜像2G多，差点吓死我，另外还有mysql，redis融合在里面。我们的mysql不在机器本地，也没有打算迁移。为了防止上次ucloud  B机房整体服务断绝联系之后一个报警都没有尴尬发生，我准备把这台机器放到其他机房，万一下次ucloud B机房挂掉最起码监控是有的，但是如果它全线挂。。。。呸，上次就是我这乌鸦嘴。。。  &amp;emsp;&amp;emsp;这">
+<meta property="og:type" content="article">
+<meta property="og:title" content="open-falcon升级">
+<meta property="og:url" content="https://fanquqi.github.io/2017/08/15/open-falcon%E5%8D%87%E7%BA%A7/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="这次迁移本来想使用docker，看了下官方给的镜像2G多，差点吓死我，另外还有mysql，redis融合在里面。我们的mysql不在机器本地，也没有打算迁移。为了防止上次ucloud  B机房整体服务断绝联系之后一个报警都没有尴尬发生，我准备把这台机器放到其他机房，万一下次ucloud B机房挂掉最起码监控是有的，但是如果它全线挂。。。。呸，上次就是我这乌鸦嘴。。。  &amp;emsp;&amp;emsp;这">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/open-falcon-dashboard-bug.png">
+<meta property="article:published_time" content="2017-08-15T03:08:50.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.001Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="openfalcon">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/open-falcon-dashboard-bug.png">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/08/15/open-falcon%E5%8D%87%E7%BA%A7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>open-falcon升级 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/08/15/open-falcon%E5%8D%87%E7%BA%A7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          open-falcon升级
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-08-15 11:08:50" itemprop="dateCreated datePublished" datetime="2017-08-15T11:08:50+08:00">2017-08-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E7%9B%91%E6%8E%A7/" itemprop="url" rel="index"><span itemprop="name">监控</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>这次迁移本来想使用docker，看了下官方给的镜像2G多，差点吓死我，另外还有mysql，redis融合在里面。我们的mysql不在机器本地，也没有打算迁移。为了防止上次ucloud  B机房整体服务断绝联系之后一个报警都没有尴尬发生，我准备把这台机器放到其他机房，万一下次ucloud B机房挂掉最起码监控是有的，但是如果它全线挂。。。。呸，上次就是我这乌鸦嘴。。。</p>
+</blockquote>
+<p>&emsp;&emsp;这次迁移过程具体分为</p>
+<ul>
+<li>falcon—plus 部署</li>
+<li>新系统测试</li>
+<li>各机器falcon-agent升级</li>
+<li>域名更改，grafana更改</li>
+</ul>
+<h1 id="falcon-plus部署"><a href="#falcon-plus部署" class="headerlink" title="falcon-plus部署"></a>falcon-plus部署</h1><p>&emsp;&emsp;参考<a href="https://book.open-falcon.org/zh_0_2/quick_install/upgrade.html">官网</a><br>&emsp;&emsp;首先数据库有更改，增加了一个<a href="https://github.com/open-falcon/falcon-plus/blob/master/scripts/mysql/db_schema/5_alarms-db-schema.sql">alarm库</a> 这个是用来存储报警历史的，在dashboard中有展示，需要我们down下来执行下这个SQL。然后<code>sender</code>模块和<code>alarm</code>模块合二为一了，也就是说报警直接由<code>alarm</code>模块发送了，这点我刚看到的时候有一点纠结，因为v0.1版本我们没有使用<code>sender</code>模块,而是直接使用的一个脚本实时读redis，然后根据级别判断，发送邮件，微信，短信，钉钉，这不知道是不是意味着我必须修改<code>alarm</code>源码了。我们先厚着头皮继续部署，遇到什么问题解决什么问题。</p>
+<p>机器初始环境部署我在这里忽略了，包括golang等一些环境的安装。</p>
+<p><strong>执行SQL</strong><br>    wget <a href="https://github.com/open-falcon/falcon-plus/blob/master/scripts/mysql/db_schema/5_alarms-db-schema.sql">https://github.com/open-falcon/falcon-plus/blob/master/scripts/mysql/db_schema/5_alarms-db-schema.sql</a> &gt; mysql -h127.0.0.1 -ufalcon -p</p>
+<p><strong>二进制安装</strong></p>
+<p>安装包下载<a href="https://github.com/open-falcon/falcon-plus/releases/download/v0.2.0/open-falcon-v0.2.0.tar.gz">地址</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd $falcon_dir</span><br><span class="line">wget https:&#x2F;&#x2F;github.com&#x2F;open-falcon&#x2F;falcon-plus&#x2F;releases&#x2F;download&#x2F;v0.2.0&#x2F;open-falcon-v0.2.0.tar.gz</span><br><span class="line">tar -zxvf open-falcon-v0.2.0.tar.gz</span><br></pre></td></tr></table></figure>
+
+<p>然后对应修改每个模块的配置文件<br>这个我就不记录了</p>
+<p><strong>启动|停止|检查</strong><br>    ./open-falcon start|stop|check </p>
+<p><strong>各节点启动方式</strong></p>
+<ol>
+<li>进到相应模块bin目录，执行二进制文件 例：./falcon-agent start|stop|restart|tail </li>
+<li>在$faocon_dir ./open-falcon start|stop|reload|monitor</li>
+</ol>
+<h2 id="dashboard部署"><a href="#dashboard部署" class="headerlink" title="dashboard部署"></a>dashboard部署</h2><p>&emsp;&emsp;参考<a href="https://github.com/open-falcon/dashboard">官网</a></p>
+<p>操作按照<a href="https://book.open-falcon.org/zh_0_2/quick_install/frontend.html">官网文档</a>依次进行</p>
+<p>这里有个小坑<br>配置openLDAP登录的时候，配置<br>配置也较之前0.1版本有所不同）</p>
+<p>0.1版本可以用reader用户+密码去验证用户名密码</p>
+<pre><code>&quot;ldap&quot;: {
+&quot;enabled&quot;: true,
+&quot;addr&quot;: &quot;ldap.example.com:389&quot;,
+&quot;baseDN&quot;: &quot;dc=example,dc=com&quot;,
+&quot;bindDN&quot;: &quot;cn=reader,dc=example,dc=com&quot;,
+&quot;bindPasswd&quot;: &quot;123456&quot;,
+&quot;userField&quot;: &quot;uid&quot;,
+&quot;attributes&quot;: [&quot;uid&quot;,&quot;givenName&quot;,&quot;sn&quot;,&quot;mail&quot;]</code></pre><p>0.2版本验证方式直接是向openLDAP的389端口验证该用户名的密码正确性，不用配置reader用户和密码</p>
+<pre><code>LDAP_ENABLED = os.environ.get(&quot;LDAP_ENABLED&quot;,True)
+LDAP_SERVER = os.environ.get(&quot;LDAP_SERVER&quot;,&quot;ldap.example.com:389&quot;)
+LDAP_BASE_DN = os.environ.get(&quot;LDAP_BASE_DN&quot;,&quot;uid=%s,OU=People,DC=example,DC=com&quot;)
+LDAP_BINDDN_FMT = os.environ.get(&quot;LDAP_BINDDN_FMT&quot;,&quot;uid=%s,OU=People,DC=example,DC=com&quot;)
+LDAP_SEARCH_FMT = os.environ.get(&quot;LDAP_SEARCH_FMT&quot;,&quot;(uid=%s)&quot;)
+LDAP_ATTRS = [&quot;uid&quot;,&quot;givenName&quot;,&quot;sn&quot;,&quot;mail&quot;, &quot;cn&quot;]</code></pre><p>具体LDAP概念比如cn sn <a href="https://segmentfault.com/a/1190000002607140">参考</a></p>
+<p>配置完成。但是。。之前的用户不能登录成功。。。<br>看源码看到这句<br><img src="http://or2jd66dq.bkt.clouddn.com/open-falcon-dashboard-bug.png" alt=""><br>WTF，so，只能删掉用户数据，重建，但是。。。</p>
+<p>&emso;&emsp;我把用户都删了重建，这个导致了后来一个bug，因为报警都是按组发送的，所以用户删完之后，组别在dashboard中没有显示了。。新建会显示 <strong>组已经存在</strong> 我去，原来数据库中还有一个action表，里面还有原来分组的消息，我只能新建另一个分组，到portal中（v0.1版本我没有下掉，监控不能断）把报警接收组改成新加的这个组。。</p>
+<p>然后就OK了。<br>但是。上文说过，alarm与sender合并了，所以报警怎么发？</p>
+<p>我去看了下alarm的配置文件<br>发现了这个  </p>
+<pre><code>&quot;worker&quot;: {
+    &quot;im&quot;: 10,
+    &quot;sms&quot;: 20,
+    &quot;mail&quot;: 10
+},</code></pre><p>对比上下文，我感觉这可能就是发微信，短信，邮件的worker数，不知道代码做没做判断，我直接把worker数改成了0，重启  </p>
+<p>查看redis  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">进到cli</span><br><span class="line">redis-cli </span><br><span class="line"></span><br><span class="line">keys *</span><br><span class="line"></span><br><span class="line">lrange &#x2F;sms 0 0</span><br></pre></td></tr></table></figure>
+
+<p>看到有报警信息  跟0.1版本一模一样  我的脚本都不用修改，真是完美。</p>
+<h1 id="新系统测试"><a href="#新系统测试" class="headerlink" title="新系统测试"></a>新系统测试</h1><p>模拟报警发送消息。略</p>
+<h1 id="各机器agent更新"><a href="#各机器agent更新" class="headerlink" title="各机器agent更新"></a>各机器agent更新</h1><ul>
+<li>./falcon-agent 二进制文件更新 </li>
+<li>配置文件更新（记得server地址更改）</li>
+</ul>
+<p>写好 ansible role直接执行，</p>
+<h1 id="nginx转发更改"><a href="#nginx转发更改" class="headerlink" title="nginx转发更改"></a>nginx转发更改</h1><p>此dashboard是使用的flask+gunicron 起的 我在内网nginx上做反向代理转发到这台机器8080 一直502，不得其解，因为着急验收，我直接在falcon_plus这台云主机上yum安装了一个nginx，然后内网nginx请求转发到这台机器80，就OK了。原因有时间再去看吧。。。或者说下次遇到falsk再看吧。。。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>&emsp;&emsp;遇到问题解决问题，不要思考的过于多导致自己迟迟不动手。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/openfalcon/" rel="tag"># openfalcon</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/08/11/python%E7%88%AC%E8%99%AB%E4%B8%80-%E7%AE%80%E5%8D%95%E7%88%AC%E5%8F%96%E8%B1%86%E7%93%A3%E9%AB%98%E5%88%86%E7%94%B5%E5%BD%B1/" rel="prev" title="python爬虫一,简单爬取豆瓣高分电影">
+      <i class="fa fa-chevron-left"></i> python爬虫一,简单爬取豆瓣高分电影
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/09/08/python-mysql%E4%BD%BF%E7%94%A8/" rel="next" title="python-mysql使用">
+      python-mysql使用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#falcon-plus部署"><span class="nav-number">1.</span> <span class="nav-text">falcon-plus部署</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#dashboard部署"><span class="nav-number">1.1.</span> <span class="nav-text">dashboard部署</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#新系统测试"><span class="nav-number">2.</span> <span class="nav-text">新系统测试</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#各机器agent更新"><span class="nav-number">3.</span> <span class="nav-text">各机器agent更新</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#nginx转发更改"><span class="nav-number">4.</span> <span class="nav-text">nginx转发更改</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

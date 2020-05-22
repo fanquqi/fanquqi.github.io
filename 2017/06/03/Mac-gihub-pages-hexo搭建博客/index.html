@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Mac下使用github+hexo建博客 很早之前就想建个博客，纠结于怎么建，有的同学使用LNMP，使用wordpress,Django，首先得有个服务器，还是不够方便。近期使用github托管一些平常使用的代码或者设置，而且平常习惯使用markdown写笔记，所以就想直接用github_pages+hexo建个博客。  下边是过程。  安装过程首先需要在Mac本地把git装好，公钥传到githu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mac+gihub pages+hexo搭建博客">
+<meta property="og:url" content="https://fanquqi.github.io/2017/06/03/Mac-gihub-pages-hexo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="Mac下使用github+hexo建博客 很早之前就想建个博客，纠结于怎么建，有的同学使用LNMP，使用wordpress,Django，首先得有个服务器，还是不够方便。近期使用github托管一些平常使用的代码或者设置，而且平常习惯使用markdown写笔记，所以就想直接用github_pages+hexo建个博客。  下边是过程。  安装过程首先需要在Mac本地把git装好，公钥传到githu">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-06-03T14:48:39.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.983Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="hexo">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/06/03/Mac-gihub-pages-hexo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Mac+gihub pages+hexo搭建博客 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/06/03/Mac-gihub-pages-hexo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Mac+gihub pages+hexo搭建博客
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-06-03 22:48:39" itemprop="dateCreated datePublished" datetime="2017-06-03T22:48:39+08:00">2017-06-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/hexo/" itemprop="url" rel="index"><span itemprop="name">hexo</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Mac下使用github-hexo建博客"><a href="#Mac下使用github-hexo建博客" class="headerlink" title="Mac下使用github+hexo建博客"></a>Mac下使用github+hexo建博客</h1><blockquote>
+<p>很早之前就想建个博客，纠结于怎么建，有的同学使用LNMP，使用wordpress,Django，首先得有个服务器，还是不够方便。近期使用github托管一些平常使用的代码或者设置，而且平常习惯使用markdown写笔记，所以就想直接用github_pages+hexo建个博客。</p>
+</blockquote>
+<p><strong>下边是过程。</strong></p>
+<hr>
+<h2 id="安装过程"><a href="#安装过程" class="headerlink" title="安装过程"></a>安装过程</h2><p><strong>首先</strong>需要在Mac本地把git装好，公钥传到github，然后装好node，npm</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- brew install nodejs</span><br><span class="line">- brew install npm </span><br><span class="line">- npm install -g hexo-cli</span><br><span class="line">- (看下安装目录，可以做个软链到&#x2F;usr&#x2F;bin&#x2F;)</span><br><span class="line">- ln -s &#x2F;usr&#x2F;local&#x2F;lib&#x2F;node_modules&#x2F;hexo-cli&#x2F;bin&#x2F;hexo &#x2F;usr&#x2F;bin&#x2F;hexo</span><br></pre></td></tr></table></figure>
+
+<p><strong>然后</strong>再自己Mac上建一个工作取名<strong>Blog</strong>，在github上面新建个工程参考<a href="https://pages.github.com/">github-pages官网</a>必须以 <strong>git用户名.github.io</strong>这种格式命名工程名。之后再<strong>Blog</strong> 目录下clone该工程。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">- mkdir Blog</span><br><span class="line">- cd Blog &amp;&amp; git clone https:&#x2F;&#x2F;github.com&#x2F;fanquqi&#x2F;fanquqi.github.io.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="在本地建立站点"><a href="#在本地建立站点" class="headerlink" title="在本地建立站点"></a>在本地建立站点</h2><p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。<br><a href="https://hexo.io/zh-cn/docs">Hexo相关操作参考</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ hexo init &lt;folder&gt;</span><br><span class="line">$ cd &lt;folder&gt;</span><br><span class="line">$ npm install</span><br></pre></td></tr></table></figure>
+
+<p>所以以上的<code>&lt;folder&gt;</code>我们 用Blog代替<br>操作可以改为这样,因为上文中我们已经手动建了一个<code>Blog</code>文件夹</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd Blog </span><br><span class="line">hexo init </span><br><span class="line">npm install</span><br></pre></td></tr></table></figure>
+
+<p>新建完成后我们的文件夹目录如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">.</span><br><span class="line">├── _config.yml</span><br><span class="line">├── package.json</span><br><span class="line">├── scaffolds</span><br><span class="line">├── scripts</span><br><span class="line">├── source</span><br><span class="line">|   ├── _drafts</span><br><span class="line">|   └── _posts</span><br><span class="line">└── themes</span><br></pre></td></tr></table></figure>
+
+<p>之后运行 hexo start 可以在<a href="http://localhost:4000">http://localhost:4000</a> 看到自己的页面</p>
+<p><strong>关联github</strong></p>
+<blockquote>
+<p>设置好本地之后,需要关联github，以后就可以在本地写作，传到github上了</p>
+</blockquote>
+<p>修改_config.yml,在最后加上(注意不能有tab，’:’后必须有个空格)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">deploy:</span><br><span class="line">  type: git</span><br><span class="line">  repository: https:&#x2F;&#x2F;github.com&#x2F;fanquqi&#x2F;fanquqi.github.io.git</span><br><span class="line">  branch: master</span><br></pre></td></tr></table></figure>
+
+<p>在blog文件夹目录下执行生成静态页面命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate     或者：hexo g</span><br></pre></td></tr></table></figure>
+<p>如果出现如下报错</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ERROR Local hexo not found in ~&#x2F;blog</span><br><span class="line">ERROR Try runing: &#39;npm install hexo --save&#39;</span><br></pre></td></tr></table></figure>
+
+<p>执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install hexo --save</span><br></pre></td></tr></table></figure>
+<p>如果没有出现略过此步</p>
+<p>然后deploy 一下 同步到远程github</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo deploy</span><br></pre></td></tr></table></figure>
+<p>如果出现一下报错 没有找到git</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  Blog hexo deploy</span><br><span class="line">ERROR Deployer not found: git</span><br></pre></td></tr></table></figure>
+
+<p>安装hexo-deploy-git</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">➜  Blog npm install hexo-deployer-git --save</span><br><span class="line">hexo-site@0.0.0 &#x2F;Users&#x2F;fanquanqing&#x2F;workspace&#x2F;Blog</span><br><span class="line">└─┬ hexo-deployer-git@0.3.0</span><br><span class="line">  └── moment@2.18.1</span><br></pre></td></tr></table></figure>
+
+<p>之后再次执行hexo generate和hexo deploy命令<br>如果没有报错，你就可以在<a href="https://fanquqi.github.io">https://fanquqi.github.io</a>  看到之前自己4000端口相同的内容了。好棒哦。。。</p>
+<hr>
+<p>##安装theme</p>
+<blockquote>
+<p>主题可以到hexo官网下载 <a href="https://hexo.io/themes/">https://hexo.io/themes/ </a><br>这里以Next为例。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd Blog &amp;&amp; git clone https:&#x2F;&#x2F;github.com&#x2F;iissnan&#x2F;hexo-theme-next themes&#x2F;next</span><br><span class="line">#替换Blog&#x2F;_config.yml themes: landscape 为 themes: next</span><br><span class="line">hexo clean &#x2F;&#x2F;清除缓存</span><br><span class="line">hexo generata</span><br><span class="line">hexo deploy</span><br><span class="line">hexo start</span><br></pre></td></tr></table></figure>
+<p>配置查看<a href="http://theme-next.iissnan.com/getting-started.html">http://theme-next.iissnan.com/getting-started.html </a><br><strong>搜索功能添加</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># 安装hexo-generator-searchdb(给博客添加搜索功能)</span><br><span class="line">➜  Blog npm install hexo-generator-searchdb --save</span><br><span class="line">hexo-site@0.0.0 &#x2F;Users&#x2F;fanquanqing&#x2F;workspace&#x2F;Blog</span><br><span class="line">└─┬ hexo-generator-searchdb@1.0.7</span><br><span class="line">  └── striptags@3.0.1</span><br><span class="line">#修改_config.yml,添加</span><br><span class="line">search:</span><br><span class="line">  path: search.xml</span><br><span class="line">  field: post</span><br><span class="line">  format: html</span><br><span class="line">  limit: 10000</span><br></pre></td></tr></table></figure>
+
+<p>hexo start发现问题</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  Blog hexo s</span><br><span class="line">ERROR Plugin load failed: hexo-generator-searchdb</span><br></pre></td></tr></table></figure>
+<p>查看插件hexo-generator-searchdb 中的Redmine  发现node 需要降级到4.2.2以下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">npm install -g n</span><br><span class="line">n 4.2.2</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="menu-添加"><a href="#menu-添加" class="headerlink" title="menu 添加"></a>menu 添加</h2><blockquote>
+<p>默认的有：首页，归档，分类，标签，关于, 但是next主题默认只显示了首页 归档和标签。<br>以** categories** 添加为例(tags 也是如此)</p>
+</blockquote>
+<p>1.新建categories page </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new page &quot;categories&quot;</span><br></pre></td></tr></table></figure>
+<p>会在source下面生成一个categories目录。</p>
+<p>2.修改index.md</p>
+<p>打开categories文件夹中的index.md页面，在头部添加 – type: “categories” （为了点击的时候链接生效）<br>修改完之后</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: 分类</span><br><span class="line">date: 2017-06-03 22:17:53</span><br><span class="line">type: &quot;categories&quot;</span><br><span class="line">---</span><br></pre></td></tr></table></figure>
+
+<p>3.在hexo &gt; theme &gt; next &gt; _config.yml 中修改menu下的categorues,去掉前面井号注释。</p>
+<h2 id="文章发表"><a href="#文章发表" class="headerlink" title="文章发表"></a>文章发表</h2><p>发表步骤如下</p>
+<ul>
+<li>新建文章<ul>
+<li>hexo new urlooker使用</li>
+</ul>
+</li>
+<li>编辑文章<ul>
+<li>直接vim 或者用自己的markdown编辑器编辑，这里需要提醒下添加<strong>tags</strong>和 <strong>categories</strong> 使用</li>
+<li>hexo中有Front-matter这个概念，是文件最上方以 — 分隔的区域，用于指定个别文件的变量。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: urlooker使用</span><br><span class="line">date: 2017-06-02 18:57:50</span><br><span class="line">tags: open-falcon</span><br><span class="line">categoris: 监控</span><br><span class="line">---</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+</li>
+</ul>
+<p>举例如上</p>
+<h2 id="添加评论功能"><a href="#添加评论功能" class="headerlink" title="添加评论功能"></a>添加评论功能</h2><blockquote>
+<p>多说在2017.6.1停止服务了，比较尴尬，但是新的next 集成了友言的评论功能，设置非常方便</p>
+</blockquote>
+<ul>
+<li>注册<a href="http://www.uyan.cc/">友言官网</a>，在管理后台记下UID</li>
+<li>添加UID到_config.yml 格式为</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">youyan_uid: 2323232</span><br></pre></td></tr></table></figure>
+
+<h2 id="静态文件处理"><a href="#静态文件处理" class="headerlink" title="静态文件处理"></a>静态文件处理</h2><blockquote>
+<p>好像github-pages 最大存储为300M 所以不能尽情的存储，最好吧静态图片放到外面，我直接放到了七牛云存储上，每个图片生成一个外链，很方便。</p>
+</blockquote>
+<p>重新部署下hexo即可。</p>
+<p>好了，现在就可以随时markdown了。</p>
+<p>参考：</p>
+<ul>
+<li><a href="https://madongqiang2201.github.io/">https://madongqiang2201.github.io/</a></li>
+<li><a href="http://theme-next.iissnan.com/getting-started.html">http://theme-next.iissnan.com/getting-started.html</a></li>
+<li><a href="http://jeasonstudio.github.io/2016/05/26/Mac%E4%B8%8A%E6%90%AD%E5%BB%BA%E5%9F%BA%E4%BA%8EGitHub-Page%E7%9A%84Hexo%E5%8D%9A%E5%AE%A2/">http://jeasonstudio.github.io/2016/05/26/Mac%E4%B8%8A%E6%90%AD%E5%BB%BA%E5%9F%BA%E4%BA%8EGitHub-Page%E7%9A%84Hexo%E5%8D%9A%E5%AE%A2/</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/hexo/" rel="tag"># hexo</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2016/12/30/linux%E5%91%BD%E4%BB%A4/" rel="prev" title="linux命令之相关业务场景">
+      <i class="fa fa-chevron-left"></i> linux命令之相关业务场景
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/06/file-beat%E6%8E%A5%E5%85%A5ELK/" rel="next" title="file_beat接入ELK">
+      file_beat接入ELK <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Mac下使用github-hexo建博客"><span class="nav-number">1.</span> <span class="nav-text">Mac下使用github+hexo建博客</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#安装过程"><span class="nav-number">1.1.</span> <span class="nav-text">安装过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在本地建立站点"><span class="nav-number">1.2.</span> <span class="nav-text">在本地建立站点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#menu-添加"><span class="nav-number">1.3.</span> <span class="nav-text">menu 添加</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文章发表"><span class="nav-number">1.4.</span> <span class="nav-text">文章发表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加评论功能"><span class="nav-number">1.5.</span> <span class="nav-text">添加评论功能</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#静态文件处理"><span class="nav-number">1.6.</span> <span class="nav-text">静态文件处理</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

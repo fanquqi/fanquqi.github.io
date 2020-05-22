@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="目前为了解耦每个系统组件，消息异步或者缓冲经常要用到消息队列，当下时兴的消息队列也不在少数。但是提到高吞吐的消息队列，很多人可能会想到kafka，而且目前使用者也是很多，当然作为一个运维人员我们也很想知道，相比于别的MQ它到底优势在哪儿。  关键词解读 Topic 划分messages的逻辑概念，生产和消费需要都需要指定topic replication 副本数，Topic的属性，指存储多少份数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka技术细节">
+<meta property="og:url" content="https://fanquqi.github.io/2017/11/14/kafka%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="目前为了解耦每个系统组件，消息异步或者缓冲经常要用到消息队列，当下时兴的消息队列也不在少数。但是提到高吞吐的消息队列，很多人可能会想到kafka，而且目前使用者也是很多，当然作为一个运维人员我们也很想知道，相比于别的MQ它到底优势在哪儿。  关键词解读 Topic 划分messages的逻辑概念，生产和消费需要都需要指定topic replication 副本数，Topic的属性，指存储多少份数">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-11-14T07:57:06.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.992Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="kafka">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/11/14/kafka%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>kafka技术细节 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/11/14/kafka%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          kafka技术细节
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-11-14 15:57:06" itemprop="dateCreated datePublished" datetime="2017-11-14T15:57:06+08:00">2017-11-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>目前为了解耦每个系统组件，消息异步或者缓冲经常要用到消息队列，当下时兴的消息队列也不在少数。但是提到高吞吐的消息队列，很多人可能会想到kafka，而且目前使用者也是很多，当然作为一个运维人员我们也很想知道，相比于别的MQ它到底优势在哪儿。</p>
+</blockquote>
+<h1 id="关键词解读"><a href="#关键词解读" class="headerlink" title="关键词解读"></a>关键词解读</h1><ul>
+<li><code>Topic</code> 划分messages的逻辑概念，生产和消费需要都需要指定topic</li>
+<li><code>replication</code> 副本数，Topic的属性，指存储多少份数据，用来提高容错率</li>
+<li><code>patition</code> 分区数，是kafka横向扩展与并行化的基础。每个topic需要指定它的partition数量，最下为1，每个Topic副本会拆分成多个partition，均匀存放到每个broker上，一般为broker的整倍数，消费者的数量也最好与之对应。</li>
+<li><code>broker</code> 集群节点，用来接收生产消费请求，并将message并持久化到本地磁盘，每个Cluster当中会选举出一个Broker来担任Controller，负责处理Partition的Leader选举，协调Partition迁移等工作。</li>
+</ul>
+<h1 id="kafka性能保证（关键技术）"><a href="#kafka性能保证（关键技术）" class="headerlink" title="kafka性能保证（关键技术）"></a>kafka性能保证（关键技术）</h1><h3 id="基于文件系统的顺序磁盘读写"><a href="#基于文件系统的顺序磁盘读写" class="headerlink" title="基于文件系统的顺序磁盘读写"></a>基于文件系统的顺序磁盘读写</h3><p>我之前一直主观上认为磁盘读写很慢，跟内存读写不是一个级别，日常写码也是，要求快速被读到的值一直是放到内存中。很多中间件比如Redis，rabbitmq，也是内存大户，大量的占用内存来保证读写速度。而kafka却不是。。<br>首先，科普下，其实磁盘读写速度非常快也非常慢。怎么讲？<br>这取决于你怎么用它，SATA机械磁盘正常顺序读写速度可以达到600M/s,而随机读写速度仅100K/s.相差近6000倍，所以效率由自己决定。<br>所以，为了保证线性读写，Kafka重度依赖底层操作系统提供的<code>PageCache</code>功能。当上层有写操作时，操作系统只是将数据写入PageCache，同时标记Page属性为Dirty。当读操作发生时，先从PageCache中查找，如果发生缺页才进行磁盘调度，最终返回需要的数据。实际上PageCache是把尽可能多的空闲内存都当做了磁盘缓存来使用。这样如果Kafka重启，OS管理的PageCache依然可以继续使用。<br>使用PageCache功能同时可以避免在JVM内部缓存数据,减少Full GC，不至于OOM.</p>
+<p><strong>相关优化方案</strong></p>
+<ol>
+<li>Kafka官方并不建议通过Broker端的log.flush.interval.messages和log.flush.interval.ms来强制写盘，认为数据的可靠性应该通过Replica来保证，而强制Flush数据到磁盘会对整体性能产生影响。</li>
+<li>可以通过调整/proc/sys/vm/dirty_background_ratio和/proc/sys/vm/dirty_ratio来调优性能。<br>a. 脏页率超过第一个指标会启动pdflush开始Flush Dirty PageCache。<br>b. 脏页率超过第二个指标会阻塞所有的写操作来进行Flush。<br>c. 根据不同的业务需求可以适当的降低dirty_background_ratio和提高dirty_ratio。（vm.dirty_ratio = 20）</li>
+</ol>
+<h3 id="Java-NIO网络模型"><a href="#Java-NIO网络模型" class="headerlink" title="Java NIO网络模型"></a>Java NIO网络模型</h3><p>在我们接触高性能服务器<code>nginx</code>的时候应该听说过<code>epoll</code><br>所谓<code>IO模型</code>，流传的有四种比较常用的</p>
+<ul>
+<li>阻塞IO： read/write的时候，阻塞调用</li>
+<li>非阻塞IO： read/write，没有数据，立马返回，轮询</li>
+<li>IO多路复用：read/write一次都只能监听一个socket，但对于服务器来讲，有成千上完个socket连接，如何用一个函数，可以监听所有的socket上面的读写事件呢？这就是IO复用模型，对应linux上面，就是select/poll/epoll 3种技术。</li>
+<li>异步IO：linux上没有，windows上对应的是IOCP</li>
+</ul>
+<p>在Linux平台上，Java NIO就是基于epoll来实现的。所有基于epoll的框架，都有3个阶段：<br>注册事件(connect,accept,read,write)， 轮询IO是否就绪，执行实际IO操作。</p>
+<h3 id="zero-copy"><a href="#zero-copy" class="headerlink" title="zero copy"></a>zero copy</h3><p>在kafka consumer消费的过程中，kafka集群用到了zero copy，很大程度上节约了系统资源，减少了io。</p>
+<p>正常一次数据从文件中读取到发送流程如下：</p>
+<ul>
+<li>操作系统把数据从文件拷贝内核中的页缓存中</li>
+<li>应用程序从页缓存从把数据拷贝自己的内存缓存中</li>
+<li>应用程序将数据写入到内核中 socket 缓存中</li>
+<li>操作系统把数据从 socket 缓存中拷贝到网卡接口缓存，从这里发送到网络上。</li>
+</ul>
+<p>这里面涉及到四次内存调用，两次系统调用,只是一次消息消费需要这么复杂的过程，然而，linux系统中<code>sendfile</code>函数，就是提供了高性能的将数据从页面缓存发送到 socket的功能的函数。这样四步只需要两步就好了。</p>
+<h3 id="数据集，端到端批量压缩"><a href="#数据集，端到端批量压缩" class="headerlink" title="数据集，端到端批量压缩"></a>数据集，端到端批量压缩</h3><p>kafka并不是以一个message为单位进行的网络传输，而是把messages 组成一个集合，这个set的大小可以由我们来自主设定。结合服务器的性能来提高工作效率。<br>在某些情况下，瓶颈实际上不是CPU或磁盘，而是网络带宽。 对于需要在广域网上的数据中心之间发送消息的数据流水线尤其如此。 当然，用户可以一次压缩其消息，而无需Kafka所需的任何支持，但这可能导致非常差的压缩比，因为冗余的很多是由于相同类型的消息之间的重复（例如， Web日志中的JSON或用户代理或通用字符串值）。 有效的压缩需要压缩多个消息，而不是单独压缩每个消息。</p>
+<p>Kafka通过递归消息集来支持这一点。 一批消息可以一起压缩并以此形式发送到服务器。 这批消息将以压缩形式写入，并将在日志中保持压缩，并且只能由消费者解压缩。<br>Kafka支持GZIP和Snappy压缩协议，更多的细节可以看这里：<a href="https://cwiki.apache.org/confluence/display/KAFKA/Compression">https://cwiki.apache.org/confluence/display/KAFKA/Compression</a></p>
+<p>相关优化方案：<br>增加 <code>messages set</code>size  </p>
+<h1 id="生产者特点"><a href="#生产者特点" class="headerlink" title="生产者特点"></a>生产者特点</h1><ul>
+<li>批处理，异步发送。kafka生产者使用批处理试图在内存中积累数据，在单个请求发送累积的大批量数据，可以配置批处理积累的不大于一定的消息数，并等待时间不超过配置的延迟（64k 或 10毫秒）。这将累积更多消息 用于少数较大的I/O操作上，为了更好的吞吐量，这种缓存是可配置，并给出一种来权衡极少量的额外的延迟的机制。</li>
+<li>负载均衡。生产者将数据直接发送到分区leader的broker上（没有任何干预的路由层）。为了帮助producer做到这一点，Kafka所有节点都可应答给producer哪些服务器是正常的，哪些topic分区的leader允许producer在给定的时间内可以直接请求</li>
+<li>控制ack状态。kafka生产者可以跟踪消息状态，提供三种条件选择。0，1，all(-1)。<code>0</code>不保证写入副本;<code>1</code>保证有一个副本确认写入;<code>-1</code>保证所有副本写入成功，才会返回。</li>
+</ul>
+<h1 id="消费者特点"><a href="#消费者特点" class="headerlink" title="消费者特点"></a>消费者特点</h1><ul>
+<li>group分组，每个consumer对应一个patition,</li>
+<li>pull模式，更加灵活</li>
+<li>通过offset获取进度,更加容易获取，代价更小。</li>
+</ul>
+<h1 id="消息传递语义"><a href="#消息传递语义" class="headerlink" title="消息传递语义"></a>消息传递语义</h1><h1 id="副本和leader选举机制"><a href="#副本和leader选举机制" class="headerlink" title="副本和leader选举机制"></a>副本和leader选举机制</h1><p>为了提高容错率，kafka后期的版本也提供副本规则。以Topic的partition为单位。但是kafka的副本规则和其他的中间件还有点不太一样。<br>正常情况下每个partition副本有一个leader和0-n个follower，所有的读写都在leader上，leader均匀分布在每个broker上，而follower是主动找leader同步数据的。<br>follower的日志完全等同于leader的日志 — 相同的顺序相同的偏移量和消息（当然，在任何一个时间点上，leader比follower多几条消息，尚未同步到follower）</p>
+<p>怎么判断副本状态？？？</p>
+<ol>
+<li>一个节点必须能维持与zookeeper的会话（通过zookeeper的心跳机制）</li>
+<li>如果它是一个slave，它必须复制leader并且不能落后”太多”</li>
+</ol>
+<p>leader跟踪“同步”节点。如果一个follower死掉，卡住，或落后，leader将从同步副本列表中移除它。落后是通过replica.lag.max.messages配置控制，卡住是通过replica.lag.time.max.ms配置控制的。如果达到阈值都会被踢出ISR。</p>
+<p><strong>选举机制</strong></p>
+<p>普通的选举机制比如zookeeper使用的zab都是投票式选举，这种情况下，如果一共2n+1个节点，必须保证n+1各节点健康，才会投票选举成功。<br>但是这个机制很明显是不合适的对于kafka来说。<br>因为副本数大对于集群来说是很奢侈的，因为多一个副本就是数据量的翻倍，代价有点大。<br>所以kafka提供一个ISR（in-sync replicas，一组同步leader数据的副本）用来记录可以被选举的副本。kafka副本写入不被认为是已提交，直到所有的同步副本已经接收才认为。这组ISR保存在zookeeper，正因为如此，在ISR中的任何副本都有资格当选leader，所以这样集群中有n+1个副本，理论上这个模型允许挂掉n个，而集群不受影响。<br>但是。。这会遇到另一种情况。。<br>比如，我们只有两个副本，而这唯一一个follower是又正好不在ISR中，怎么办 是不是没有作用了？？</p>
+<p>不是的。。</p>
+<p>这个时候kafka会做一个关于<code>一致性</code>和<code>可用性</code>的权衡，（然而这个权衡你可以通过配置文件来控制）牺牲其中一种来保障另一种。默认是优先保证可用性，也就是说会选举一个可能数据不完全的副本作为leader，然后以它为元数据。这就是<code>unclean l®eader选举</code>可用通过jmx获取这个metrics,作为集群健康的一项指标。</p>
+<p>如果我们业务有要求或者你是个完美主义者，当遇到这种情况的时候宁愿不选举出leader，也要保证数据完整性，可用通过<code>unclean.leader.election.enable</code>这个配置来禁用<code>unclean leader 选举</code>。<br>需要注意，kafka的这些选举是由controler来控制的。而controler是在集群中broker中选举出来的，每个集群中同一时间节点只能有一个，如果多个说明集群不正常，这个也有相应的metrics在jmx中获取。作为集群健康的一项指标。如果controler出现故障也会从其他broker中选举。</p>
+<h1 id="问题答疑"><a href="#问题答疑" class="headerlink" title="问题答疑"></a>问题答疑</h1><h2 id="删除group"><a href="#删除group" class="headerlink" title="删除group"></a>删除group</h2><p>如何删除group信息</p>
+<p>首先明确一点，Kafka是会删除consumer group信息的，既包括位移信息，也包括组元数据信息。对于位移信息而言，前面提到过每条位移消息都设置了过期时间。每个Kafka broker在后台会启动一个线程，定期(由offsets.retention.check.interval.ms确定，默认10分钟)扫描过期位移，并删除之。而对组元数据而言，删除它们的条件有两个：1. 这个group下不能存在active成员，即所有成员都已经退出了group；2. 这个group的所有位移信息都已经被删除了。当满足了这两个条件后，Kafka后台线程会删除group运输局信息。</p>
+<p>好了， 我们总说删除，那么Kafka到底是怎么删除的呢——正是通过写入具有相同key的tombstone消息。我们举个例子，假设<strong>consumer_offsets当前保存有一条位移消息，key是【testGroupid，test, 0】（三元组），value是待提交的位移信息。无论何时，只要我们向</strong>consumer_offsets相同分区写入一条key=【testGroupid，test, 0】，value=null的消息，那么Kafka就会认为之前的那条位移信息是可以删除的了——即相当于我们向__consumer_offsets中插入了一个delete mark。</p>
+<p>再次强调一下，向__consumer_offsets写入tombstone消息仅仅是标记它之前的具有相同key的消息是可以被删除的，但删除操作通常不会立即开始。真正的删除操作是由log cleaner的Cleaner线程来执行的。</p>
+<p>offset过期参数<br>offset.retentions.minuntes  default 10800</p>
+<h2 id="kafka-节点-磁盘io高问题排查"><a href="#kafka-节点-磁盘io高问题排查" class="headerlink" title="kafka 节点 磁盘io高问题排查"></a>kafka 节点 磁盘io高问题排查</h2><ol>
+<li>看实际流量是不是很大</li>
+<li>如果有raid，查看raid缓存策略<br> 如果缓存策略有问题 iotop  看到 系统 [flush] 进程占用io应该是非常高的 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># megacli -cfgdsply -aALL|grep Polic  （查看缓存策略）</span><br><span class="line"># megacli -LDSetProp -CachedBadBBU -Lall -aAl （更改电池充放电时刻缓存策略）</span><br></pre></td></tr></table></figure></li>
+<li>查看系统内核脏页参数（见上文）</li>
+</ol>
+<p>参考：<br><a href="http://blog.csdn.net/bigtree_3721/article/details/78411652">http://blog.csdn.net/bigtree_3721/article/details/78411652</a><br><a href="http://www.jasongj.com/tags/Kafka/">http://www.jasongj.com/tags/Kafka/</a><br><a href="http://orchome.com/10">http://orchome.com/10</a><br><a href="http://zqhxuyuan.github.io/2016/01/19/2016-01-19-Kafka-Consumer-scala/">http://zqhxuyuan.github.io/2016/01/19/2016-01-19-Kafka-Consumer-scala/</a></p>
+<pre><code></code></pre><p>10.115.106.241</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/kafka/" rel="tag"># kafka</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/11/08/ssh%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91/" rel="prev" title="ssh端口转发">
+      <i class="fa fa-chevron-left"></i> ssh端口转发
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/11/27/curl%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/" rel="next" title="curl使用指南">
+      curl使用指南 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#关键词解读"><span class="nav-number">1.</span> <span class="nav-text">关键词解读</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#kafka性能保证（关键技术）"><span class="nav-number">2.</span> <span class="nav-text">kafka性能保证（关键技术）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基于文件系统的顺序磁盘读写"><span class="nav-number">2.0.1.</span> <span class="nav-text">基于文件系统的顺序磁盘读写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Java-NIO网络模型"><span class="nav-number">2.0.2.</span> <span class="nav-text">Java NIO网络模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#zero-copy"><span class="nav-number">2.0.3.</span> <span class="nav-text">zero copy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据集，端到端批量压缩"><span class="nav-number">2.0.4.</span> <span class="nav-text">数据集，端到端批量压缩</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#生产者特点"><span class="nav-number">3.</span> <span class="nav-text">生产者特点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#消费者特点"><span class="nav-number">4.</span> <span class="nav-text">消费者特点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#消息传递语义"><span class="nav-number">5.</span> <span class="nav-text">消息传递语义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#副本和leader选举机制"><span class="nav-number">6.</span> <span class="nav-text">副本和leader选举机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#问题答疑"><span class="nav-number">7.</span> <span class="nav-text">问题答疑</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#删除group"><span class="nav-number">7.1.</span> <span class="nav-text">删除group</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kafka-节点-磁盘io高问题排查"><span class="nav-number">7.2.</span> <span class="nav-text">kafka 节点 磁盘io高问题排查</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

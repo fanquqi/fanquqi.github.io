@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="我们公司有些服务使用ucloud主机，付费等问题都是我负责，前一段时间跟他们的架构沟通了一下，发现他们的API还是很方便的，尤其他们提供弹性IP可以自由伸缩，我们完全可以写个脚本统计带宽，实时调整。如果在云上跑docker，完全可以直接通过流量挥着访问量实时业务扩容。运维真的做到自动化。  ucloud提供了官方的&#96;apk&#96;[链接](https:&#x2F;&#x2F;github.com&#x2F;ucloud-web&#x2F;p">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过ucloud_API查看资源价格">
+<meta property="og:url" content="https://fanquqi.github.io/2017/07/11/ucloud-API%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="我们公司有些服务使用ucloud主机，付费等问题都是我负责，前一段时间跟他们的架构沟通了一下，发现他们的API还是很方便的，尤其他们提供弹性IP可以自由伸缩，我们完全可以写个脚本统计带宽，实时调整。如果在云上跑docker，完全可以直接通过流量挥着访问量实时业务扩容。运维真的做到自动化。  ucloud提供了官方的&#96;apk&#96;[链接](https:&#x2F;&#x2F;github.com&#x2F;ucloud-web&#x2F;p">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/grafana_influxdb.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/grafana_ucloud_eip.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/grafana_ucloud_price.png">
+<meta property="article:published_time" content="2017-07-11T09:34:50.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.016Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="python">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/grafana_influxdb.png">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/07/11/ucloud-API%E4%BD%BF%E7%94%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>通过ucloud_API查看资源价格 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/07/11/ucloud-API%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          通过ucloud_API查看资源价格
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-07-11 17:34:50" itemprop="dateCreated datePublished" datetime="2017-07-11T17:34:50+08:00">2017-07-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>我们公司有些服务使用ucloud主机，付费等问题都是我负责，前一段时间跟他们的架构沟通了一下，发现他们的API还是很方便的，尤其他们提供弹性IP可以自由伸缩，我们完全可以写个脚本统计带宽，实时调整。如果在云上跑docker，完全可以直接通过流量挥着访问量实时业务扩容。运维真的做到自动化。</p>
+</blockquote>
+<pre><code>ucloud提供了官方的`apk`[链接](https://github.com/ucloud-web/python-sdk-v2.git)</code></pre><p>有的同学直接把它写成了python命令 <a href="https://pypi.python.org/pypi/ucli/">链接</a></p>
+<p>本来只是想做一个统计价格的工具，写着写着，就像反正收集实例信息还不如都挨个统计一下展示出来，<br>因为：</p>
+<ol>
+<li>ucloud信息展示的并不清晰  </li>
+<li>如果看到价格有异常肯定第一时间想知道到底哪个贵些，贵在哪里，更方便直观一些</li>
+</ol>
+<p>我在下边主要展示一下自己手写的几个脚本通过API获取实例信息，再通过实例信息获取实例价格，最后统一发送到influxDB中去到grafana上呈现。定时每天跑一次。代码水平有限，大家请不要嘲笑。</p>
+<p>先来看下他的apk和配置文件<br>他的public_key 和 private_key 涉及到自己独特的加秘方式。可以去ucloud官网看看 </p>
+<h2 id="apk-py"><a href="#apk-py" class="headerlink" title="apk.py"></a><code>apk.py</code></h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"># -*- coding: utf-8 -*-</span><br><span class="line">import hashlib, json, httplib</span><br><span class="line">import urlparse</span><br><span class="line">import urllib</span><br><span class="line">import sys</span><br><span class="line">from config import *</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">class UCLOUDException(Exception):</span><br><span class="line">    def __str__(self):</span><br><span class="line">        return &quot;Error&quot;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def _verfy_ac(private_key, params):</span><br><span class="line">    items &#x3D; params.items()</span><br><span class="line">    items.sort()</span><br><span class="line"></span><br><span class="line">    params_data &#x3D; &quot;&quot;</span><br><span class="line">    for key, value in items:</span><br><span class="line">        params_data &#x3D; params_data + str(key) + str(value)</span><br><span class="line"></span><br><span class="line">    params_data &#x3D; params_data+private_key</span><br><span class="line"></span><br><span class="line">    &#39;&#39;&#39;use sha1 to encode keys&#39;&#39;&#39;</span><br><span class="line">    hash_new &#x3D; hashlib.sha1()</span><br><span class="line">    hash_new.update(params_data)</span><br><span class="line">    hash_value &#x3D; hash_new.hexdigest()</span><br><span class="line">    return hash_value</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">class UConnection(object):</span><br><span class="line">    def __init__(self, base_url):</span><br><span class="line">        self.base_url &#x3D; base_url</span><br><span class="line">        o &#x3D; urlparse.urlsplit(base_url)</span><br><span class="line">        if o.scheme &#x3D;&#x3D; &#39;https&#39;:</span><br><span class="line">            self.conn &#x3D; httplib.HTTPSConnection(o.netloc)</span><br><span class="line">        else:</span><br><span class="line">            self.conn &#x3D; httplib.HTTPConnection(o.netloc)</span><br><span class="line"></span><br><span class="line">    def __del__(self):</span><br><span class="line">        self.conn.close()</span><br><span class="line"></span><br><span class="line">    def get(self, resouse, params):</span><br><span class="line">        resouse +&#x3D; &quot;?&quot; + urllib.urlencode(params)</span><br><span class="line">        print(&quot;%s%s&quot; % (self.base_url, resouse))</span><br><span class="line">        self.conn.request(&quot;GET&quot;, resouse)</span><br><span class="line">        response &#x3D; json.loads(self.conn.getresponse().read())</span><br><span class="line">        return response</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">class UcloudApiClient(object):</span><br><span class="line">    # 添加 设置 数据中心和  zone 参数</span><br><span class="line">    def __init__(self, base_url, public_key, private_key):</span><br><span class="line">        self.g_params &#x3D; &#123;&#125;</span><br><span class="line">        self.g_params[&#39;PublicKey&#39;] &#x3D; public_key</span><br><span class="line">        self.private_key &#x3D; private_keyurl</span><br><span class="line">        self.conn &#x3D; UConnection(base_url)</span><br><span class="line"></span><br><span class="line">    def get(self, uri, params):</span><br><span class="line">        # print params</span><br><span class="line">        _params &#x3D; dict(self.g_params, **params)</span><br><span class="line"></span><br><span class="line">        if project_id :</span><br><span class="line">            _params[&quot;ProjectId&quot;] &#x3D; project_id</span><br><span class="line"></span><br><span class="line">        _params[&quot;Signature&quot;] &#x3D; _verfy_ac(self.private_key, _params)</span><br><span class="line">        return self.conn.get(uri, _params)</span><br></pre></td></tr></table></figure>
+
+<h2 id="conf-py"><a href="#conf-py" class="headerlink" title="conf.py"></a><code>conf.py</code></h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#-*- encoding: utf-8 -*-</span><br><span class="line">#配置公私钥&quot;&quot;&quot;</span><br><span class="line">public_key  &#x3D; &quot;at************************&quot;</span><br><span class="line">private_key &#x3D; &quot;e7***************&quot;</span><br><span class="line">#project_id &#x3D; &quot;******&quot; # 项目ID 请在Dashbord 上获取</span><br><span class="line"></span><br><span class="line">base_url    &#x3D; &quot;https:&#x2F;&#x2F;api.ucloud.cn&quot;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="collect-uhost-price-py"><a href="#collect-uhost-price-py" class="headerlink" title="collect_uhost_price.py"></a>collect_uhost_price.py</h2><blockquote>
+<p>通过查看机器示例，按付费方式查看机器价格。<br>具体查看<a href="https://docs.ucloud.cn/api/uhost-api/index">ucloud uhost API</a></p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;python</span><br><span class="line">#-*- coding:utf-8 -*-</span><br><span class="line"></span><br><span class="line"># author:fanquanqing</span><br><span class="line"># collect ucloud uhost price</span><br><span class="line">from sdk import UcloudApiClient</span><br><span class="line">from config import *</span><br><span class="line">from collections import Iterable</span><br><span class="line">import sys</span><br><span class="line">import json</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#host_list &#x3D; []</span><br><span class="line"></span><br><span class="line"># 收集uhost信息</span><br><span class="line">def collect_uhost_info(Regions_list,ProjectId):</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    包含 hostname, ip, region, cpu, mem, diskspace, chargetype, count, ImageId, osname.</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    host_info_list &#x3D; []</span><br><span class="line">    for Region in Regions_list:</span><br><span class="line">        ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">        Parameters&#x3D;&#123;</span><br><span class="line">        &quot;Action&quot;:&quot;DescribeUHostInstance&quot;,</span><br><span class="line">        &quot;Region&quot;:Region,</span><br><span class="line">        &quot;ProjectId&quot;:ProjectId,</span><br><span class="line">        &quot;Limit&quot;:&quot;1000&quot;</span><br><span class="line">        &#125;</span><br><span class="line">        response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters);</span><br><span class="line">        length &#x3D; response[&#39;TotalCount&#39;]</span><br><span class="line">        for i in range(length):</span><br><span class="line">            host_info &#x3D; &#123;&#125;</span><br><span class="line">            #ImageId &#x3D; response[&quot;UHostSet&quot;][i][&quot;BasicImageId&quot;].encode(&quot;utf-8&quot;)</span><br><span class="line">            ChargeType &#x3D; response[&quot;UHostSet&quot;][i][&quot;ChargeType&quot;].encode(&quot;utf-8&quot;)</span><br><span class="line">            #host_info[&quot;Action&quot;] &#x3D; &quot;GetUHostInstancePrice&quot;</span><br><span class="line">            host_info[&quot;Region&quot;] &#x3D; Region</span><br><span class="line">            host_info[&quot;ImageId&quot;] &#x3D; &quot;uimage-kg0w4u&quot;</span><br><span class="line">            host_info[&quot;Hostname&quot;] &#x3D; response[&quot;UHostSet&quot;][i][&quot;Name&quot;]</span><br><span class="line">            host_info[&quot;CPU&quot;] &#x3D; response[&quot;UHostSet&quot;][i][&quot;CPU&quot;]</span><br><span class="line">            host_info[&quot;Memory&quot;] &#x3D; response[&quot;UHostSet&quot;][i][&quot;Memory&quot;]</span><br><span class="line"></span><br><span class="line">            if len(response[&quot;UHostSet&quot;][i][&quot;DiskSet&quot;]) &gt; 1:</span><br><span class="line">                host_info[&quot;DiskSpace&quot;] &#x3D; response[&quot;UHostSet&quot;][i][&quot;DiskSet&quot;][1][&quot;Size&quot;]</span><br><span class="line">            else:</span><br><span class="line">                host_info[&quot;DiskSpace&quot;]&#x3D;0</span><br><span class="line">            host_info[&quot;Count&quot;] &#x3D; 1</span><br><span class="line">            host_info[&quot;ChargeType&quot;] &#x3D; ChargeType</span><br><span class="line">            host_info[&quot;OsName&quot;] &#x3D; response[&quot;UHostSet&quot;][i][&quot;OsName&quot;].split()[0]</span><br><span class="line">            host_info[&quot;loaclIP&quot;] &#x3D; response[&quot;UHostSet&quot;][i][&quot;IPSet&quot;][0][&quot;IP&quot;]</span><br><span class="line">            if len(response[&quot;UHostSet&quot;][i][&quot;IPSet&quot;])&gt;1:</span><br><span class="line">                host_info[&quot;EIP&quot;]&#x3D;response[&quot;UHostSet&quot;][i][&quot;IPSet&quot;][1][&quot;IP&quot;]</span><br><span class="line">            else:</span><br><span class="line">                host_info[&quot;EIP&quot;]&#x3D;&quot;none&quot;</span><br><span class="line"></span><br><span class="line">            host_info_list.append(host_info)</span><br><span class="line">    #print host_info_list</span><br><span class="line">    return host_info_list</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#通过机器配置得到某一台机器价格</span><br><span class="line">def get_uhost_price(host_instance_info):</span><br><span class="line">    ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">    Parameters&#x3D; host_instance_info</span><br><span class="line">    response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters );</span><br><span class="line">#    print json.dumps(response, sort_keys&#x3D;True, indent&#x3D;4, separators&#x3D;(&#39;,&#39;, &#39;: &#39;))</span><br><span class="line">    price &#x3D; float(response[&quot;PriceSet&quot;][0].values()[0])</span><br><span class="line">    return price</span><br><span class="line"></span><br><span class="line">#通过机器配置信息得到所有机器价格</span><br><span class="line">def get_all_uhost_price(host_info_list):</span><br><span class="line"></span><br><span class="line">    for host_info in host_info_list:</span><br><span class="line">        host_params&#x3D;&#123;&#125;</span><br><span class="line">        host_params[&quot;Action&quot;]&#x3D;&quot;GetUHostInstancePrice&quot;</span><br><span class="line">        host_params[&quot;ImageId&quot;]&#x3D;host_info[&quot;ImageId&quot;]</span><br><span class="line">        host_params[&quot;CPU&quot;]&#x3D;host_info[&quot;CPU&quot;]</span><br><span class="line">        host_params[&quot;Memory&quot;]&#x3D;host_info[&quot;Memory&quot;]</span><br><span class="line">        host_params[&quot;Count&quot;]&#x3D;host_info[&quot;Count&quot;]</span><br><span class="line">        host_params[&quot;DiskSpace&quot;]&#x3D;host_info[&quot;DiskSpace&quot;]</span><br><span class="line">        host_params[&quot;Region&quot;]&#x3D;&quot;cn-bj2&quot;</span><br><span class="line">        host_params[&quot;ChargeType&quot;]&#x3D;host_info[&quot;ChargeType&quot;]</span><br><span class="line">        if host_params[&quot;ChargeType&quot;]&#x3D;&#x3D;&quot;Year&quot;:</span><br><span class="line">            price &#x3D; get_uhost_price(host_params)</span><br><span class="line">        elif host_params[&quot;ChargeType&quot;]&#x3D;&#x3D;&quot;Month&quot;:</span><br><span class="line">            price &#x3D; get_uhost_price(host_params)*12</span><br><span class="line">        else:</span><br><span class="line">            price&#x3D;0</span><br><span class="line">            print &quot;有临时机器请排查。&quot;</span><br><span class="line">        host_info[&quot;Price&quot;]&#x3D;price</span><br><span class="line"></span><br><span class="line">    return host_info_list</span><br><span class="line"></span><br><span class="line">def collect_uhost_price(setting_info):</span><br><span class="line"></span><br><span class="line">    host_info_total &#x3D; []</span><br><span class="line">    for Projectname in setting_info:</span><br><span class="line">        for ProjectId in setting_info[Projectname]:</span><br><span class="line">            Regions_list &#x3D; setting_info[Projectname][ProjectId]</span><br><span class="line">            host_info_list &#x3D; collect_uhost_info(Regions_list,ProjectId)</span><br><span class="line">            project_host_list &#x3D; get_all_uhost_price(host_info_list)</span><br><span class="line">            host_info_total.extend(project_host_list)</span><br><span class="line">    return host_info_total</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    host_info_list &#x3D; collect_uhost_info([&#39;cn-bj2&#39;,&#39;hk&#39;],&quot;org-oddm1w&quot;)</span><br><span class="line">    host_price_list &#x3D; get_all_uhost_price(host_info_list)</span><br><span class="line">    #print host_price_list</span><br></pre></td></tr></table></figure>
+
+<h2 id="collect-eip-price-py"><a href="#collect-eip-price-py" class="headerlink" title="collect_eip_price.py"></a>collect_eip_price.py</h2><blockquote>
+<p>收集弹性IP信息</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;env python</span><br><span class="line"># -*- coding:utf-8 -*-</span><br><span class="line"># author:fanquanqing</span><br><span class="line"># collect ucloud eip price</span><br><span class="line">from sdk import UcloudApiClient</span><br><span class="line">from config import *</span><br><span class="line">import sys</span><br><span class="line">import json</span><br><span class="line"></span><br><span class="line"># 得到所有的EIP实例信息</span><br><span class="line">def get_eip_instance(Regions_list,ProjectId):</span><br><span class="line">    eip_all &#x3D; []</span><br><span class="line">    for Region in Regions_list:</span><br><span class="line">        ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">        Parameters&#x3D;&#123;&quot;Action&quot;:&quot;DescribeEIP&quot;, &quot;Region&quot;:Region, &quot;ProjectId&quot;:ProjectId&#125;</span><br><span class="line">        response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters );</span><br><span class="line">        for eip in response[&#39;EIPSet&#39;]:</span><br><span class="line">            eip_instance &#x3D; &#123;&#125;</span><br><span class="line">            # 地域</span><br><span class="line">            eip_instance[&#39;Region&#39;]&#x3D;Region</span><br><span class="line">            # IP</span><br><span class="line">            eip_instance[&#39;IP&#39;]&#x3D;eip[&#39;EIPAddr&#39;][0][&#39;IP&#39;]</span><br><span class="line"></span><br><span class="line">            # 运营商线路</span><br><span class="line">            eip_instance[&#39;OperatorName&#39;]&#x3D;eip[&#39;EIPAddr&#39;][0][&#39;OperatorName&#39;].encode(&#39;utf-8&#39;)</span><br><span class="line">            # 带宽</span><br><span class="line">            eip_instance[&#39;Bandwidth&#39;]&#x3D;eip[&#39;Bandwidth&#39;]</span><br><span class="line">            # 付费周期</span><br><span class="line">            eip_instance[&#39;ChargeType&#39;]&#x3D;eip[&#39;ChargeType&#39;].encode(&#39;utf-8&#39;)</span><br><span class="line">            # 付费方式(是否绑定共享带宽)</span><br><span class="line">            eip_instance[&#39;PayMode&#39;]&#x3D;eip[&#39;PayMode&#39;].encode(&#39;utf-8&#39;)</span><br><span class="line">            eip_all.append(eip_instance)</span><br><span class="line"></span><br><span class="line">    return eip_all</span><br><span class="line">    #print json.dumps(response, sort_keys&#x3D;True, indent&#x3D;4, separators&#x3D;(&#39;,&#39;, &#39;: &#39;))</span><br><span class="line"></span><br><span class="line"># 查看单个EIP实例价格</span><br><span class="line">def get_eip_price(eip):</span><br><span class="line">    ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">    Parameters&#x3D;eip</span><br><span class="line">    response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters );</span><br><span class="line">    #print response</span><br><span class="line">    price &#x3D; response[&#39;PriceSet&#39;][0][&#39;Price&#39;]</span><br><span class="line">    return price</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 获取所有EIP价格</span><br><span class="line">def get_all_eip_price(eip_all):</span><br><span class="line"></span><br><span class="line">    for eip_info in eip_all:</span><br><span class="line">        eip_params&#x3D;&#123;&#125;</span><br><span class="line">        eip_params[&#39;Action&#39;]&#x3D;&quot;GetEIPPrice&quot;</span><br><span class="line">        eip_params[&#39;Region&#39;]&#x3D;eip_info[&#39;Region&#39;]</span><br><span class="line">        eip_params[&#39;OperatorName&#39;]&#x3D;eip_info[&#39;OperatorName&#39;]</span><br><span class="line">        eip_params[&#39;Bandwidth&#39;]&#x3D;eip_info[&#39;Bandwidth&#39;]</span><br><span class="line">        eip_params[&#39;ChargeType&#39;]&#x3D;eip_info[&#39;ChargeType&#39;]</span><br><span class="line">        eip_params[&#39;PayMode&#39;]&#x3D;eip_info[&#39;PayMode&#39;]</span><br><span class="line">        if eip_params[&#39;ChargeType&#39;]&#x3D;&#x3D;&quot;Year&quot;:</span><br><span class="line">            price &#x3D; get_eip_price(eip_params)</span><br><span class="line">        elif eip_params[&#39;ChargeType&#39;]&#x3D;&#x3D;&quot;Month&quot;:</span><br><span class="line">            price &#x3D; get_eip_price(eip_params)*12</span><br><span class="line">        else:</span><br><span class="line">            price&#x3D;0</span><br><span class="line">            print &quot;有临时EIP请排查&quot;</span><br><span class="line">        eip_info[&quot;Price&quot;]&#x3D;price</span><br><span class="line">    return eip_all</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def collect_eip_price(setting_info):</span><br><span class="line">    eip_info_total &#x3D; []</span><br><span class="line">    for Projectname in setting_info:</span><br><span class="line">        for ProjectId in setting_info[Projectname]:</span><br><span class="line">            Regions_list &#x3D; setting_info[Projectname][ProjectId]</span><br><span class="line">            eip_all&#x3D;get_eip_instance(Regions_list,ProjectId)</span><br><span class="line">            price_all&#x3D;get_all_eip_price(eip_all)</span><br><span class="line">            eip_info_total.extend(price_all)</span><br><span class="line">    #print eip_info_total</span><br><span class="line">    return eip_info_total</span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    collect_eip_price(&#123;&quot;chunyu&quot;:&#123;&quot;org-oddm1w&quot;:[&#39;cn-bj2&#39;,&#39;hk&#39;]&#125;, &quot;uhs&quot;:&#123;&quot;org-shbbct&quot;:[&quot;cn-bj2&quot;]&#125;&#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="collect-udisk-price-py"><a href="#collect-udisk-price-py" class="headerlink" title="collect_udisk_price.py"></a>collect_udisk_price.py</h2><blockquote>
+<p>收集云硬盘信息，这个只是取到实例自己手动算的价格</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;env python</span><br><span class="line"># -*- coding:utf-8 -*-</span><br><span class="line"></span><br><span class="line"># author: fanquanqing</span><br><span class="line"># 收集ucloud云硬盘信息 及价格</span><br><span class="line"></span><br><span class="line">from sdk import UcloudApiClient</span><br><span class="line">from config import *</span><br><span class="line">import sys</span><br><span class="line">import json</span><br><span class="line"></span><br><span class="line"># 获取udisk 信息</span><br><span class="line">def get_udisk_info(Regions_list,ProjectId):</span><br><span class="line">    udisk_list &#x3D; []</span><br><span class="line">    for Region in Regions_list:</span><br><span class="line">        ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">        Parameters&#x3D;&#123;&quot;Action&quot;:&quot;DescribeUDisk&quot;, &quot;Region&quot;:Region, &quot;ProjectId&quot;:ProjectId&#125;</span><br><span class="line">        response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters );</span><br><span class="line">        for udisk in response[&#39;DataSet&#39;]:</span><br><span class="line">            udisk_dic &#x3D; &#123;&#125;</span><br><span class="line">            udisk_dic[&#39;Region&#39;] &#x3D; Region</span><br><span class="line">            #udisk_dic[&#39;Action&#39;] &#x3D; &quot;DescribeUDiskPrice&quot;</span><br><span class="line">            udisk_dic[&#39;Size&#39;] &#x3D; udisk[&#39;Size&#39;]</span><br><span class="line">            udisk_dic[&#39;ChargeType&#39;] &#x3D; udisk[&#39;ChargeType&#39;].encode(&#39;utf-8&#39;)</span><br><span class="line">            udisk_dic[&#39;UHostName&#39;] &#x3D; udisk[&#39;UHostName&#39;]</span><br><span class="line">            udisk_dic[&#39;Quantity&#39;] &#x3D; 1</span><br><span class="line">            udisk_dic[&#39;Zone&#39;] &#x3D; &quot;cn-bj2-02&quot;</span><br><span class="line">            udisk_list.append(udisk_dic)</span><br><span class="line">    return udisk_list</span><br><span class="line"></span><br><span class="line"># 通过udisk信息获取价格</span><br><span class="line">def get_udisk_price(udisk_list):</span><br><span class="line">    for udisk in udisk_list:</span><br><span class="line">        ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">        udisk_params&#x3D;&#123;&#125;</span><br><span class="line">        udisk_params[&#39;Action&#39;]&#x3D;&quot;DescribeUDiskPrice&quot;</span><br><span class="line">        udisk_params[&#39;Region&#39;]&#x3D;udisk[&#39;Region&#39;]</span><br><span class="line">        udisk_params[&#39;Size&#39;]&#x3D;udisk[&#39;Size&#39;]</span><br><span class="line">        udisk_params[&#39;ChargeType&#39;]&#x3D;udisk[&#39;ChargeType&#39;]</span><br><span class="line">        udisk_params[&#39;Quantity&#39;]&#x3D;udisk[&#39;Quantity&#39;]</span><br><span class="line">        udisk_params[&#39;Zone&#39;]&#x3D;udisk[&#39;Zone&#39;]</span><br><span class="line">        Parameters &#x3D; udisk_params</span><br><span class="line">        response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters );</span><br><span class="line">        if udisk_params[&#39;ChargeType&#39;]&#x3D;&#x3D;&quot;Year&quot;:</span><br><span class="line">            price &#x3D; response[&#39;DataSet&#39;][0][&#39;Price&#39;]&#x2F;100</span><br><span class="line">        elif udisk_params[&#39;ChargeType&#39;]&#x3D;&#x3D;&quot;Month&quot;:</span><br><span class="line">            price &#x3D; response[&#39;DataSet&#39;][0][&#39;Price&#39;]&#x2F;10</span><br><span class="line">        else:</span><br><span class="line">            print &quot;有付费方式异常的云硬盘，请排查。&quot;</span><br><span class="line">        udisk[&quot;Price&quot;]&#x3D;price</span><br><span class="line">    return udisk_list</span><br><span class="line"></span><br><span class="line"># 通过付费周期获取udisk价格</span><br><span class="line">def collect_udisk_price(setting_info):</span><br><span class="line">    udisk_price_info &#x3D; []</span><br><span class="line">    for Projectname in setting_info:</span><br><span class="line">        for ProjectId in setting_info[Projectname]:</span><br><span class="line">            Regions_list &#x3D; setting_info[Projectname][ProjectId]</span><br><span class="line">            udisk_list &#x3D; get_udisk_info(Regions_list,ProjectId)</span><br><span class="line">            udisk_price_info.extend(get_udisk_price(udisk_list))</span><br><span class="line">    return udisk_price_info</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    collect_udisk_price(&#123;&quot;chunyu&quot;:&#123;&quot;org-oddm1w&quot;:[&#39;cn-bj2&#39;,&#39;hk&#39;]&#125;, &quot;uhs&quot;:&#123;&quot;org-shbbct&quot;:[&quot;cn-bj2&quot;]&#125;&#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="collect-sharebandwidth-price-py"><a href="#collect-sharebandwidth-price-py" class="headerlink" title="collect_sharebandwidth_price.py"></a>collect_sharebandwidth_price.py</h2><blockquote>
+<p>收集共享带宽信息,因为没有计算价格的API这个价格也是手动算的。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;python</span><br><span class="line"># -*- coding: utf-8 -*-</span><br><span class="line">#author fanquanqing</span><br><span class="line">#收集共享带宽信息获取每年消费情况</span><br><span class="line">from sdk import UcloudApiClient</span><br><span class="line">from config import *</span><br><span class="line">import sys</span><br><span class="line">import json</span><br><span class="line"></span><br><span class="line">def get_bandwidth_info(Regions_list,ProjectId):</span><br><span class="line">    bandwidth &#x3D; []</span><br><span class="line">    for Region in Regions_list:</span><br><span class="line"></span><br><span class="line">        ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">        Parameters&#x3D;&#123;&quot;Action&quot;:&quot;DescribeShareBandwidth&quot;,&quot;Region&quot;:Region,&quot;ProjectId&quot;:ProjectId&#125;</span><br><span class="line">        response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters );</span><br><span class="line">        #print response</span><br><span class="line">        for bw in response[&#39;DataSet&#39;]:</span><br><span class="line">            bw_instance &#x3D; &#123;&#125;</span><br><span class="line">            bw_instance[&#39;ShareBandwidth&#39;] &#x3D;  bw[&#39;ShareBandwidth&#39;]</span><br><span class="line">            bw_instance[&#39;ChargeType&#39;] &#x3D; bw[&#39;ChargeType&#39;]</span><br><span class="line">            bw_instance[&#39;Name&#39;]&#x3D;bw[&#39;Name&#39;]</span><br><span class="line">            bandwidth.append(bw_instance)</span><br><span class="line">    return bandwidth</span><br><span class="line">#   print json.dumps(response, sort_keys&#x3D;True, indent&#x3D;4, separators&#x3D;(&#39;,&#39;, &#39;: &#39;))</span><br><span class="line"></span><br><span class="line">def get_price(bandwidth):</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    价格计算说明:ucloud没有提供API查询共享带宽价格，所有的共享带宽价格都是90&#x2F;M&#x2F;月 月付*12,年付*10</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    price_list &#x3D; []</span><br><span class="line">    for bw in bandwidth:</span><br><span class="line">        if bw[&#39;ChargeType&#39;]&#x3D;&#x3D;&quot;Month&quot;:</span><br><span class="line">            price &#x3D; bw[&#39;ShareBandwidth&#39;]*90*12</span><br><span class="line">            bw[&quot;Price&quot;]&#x3D;price</span><br><span class="line">        else:</span><br><span class="line">            price &#x3D; bw[&#39;ShareBandwidrh&#39;]</span><br><span class="line">            bw[&quot;Price&quot;]&#x3D;price</span><br><span class="line">    return bandwidth</span><br><span class="line"></span><br><span class="line">def collect_sharebandwidth_price(setting_info):</span><br><span class="line">    bw_price_info &#x3D; []</span><br><span class="line">    for Projectname in setting_info:</span><br><span class="line">        for ProjectId in setting_info[Projectname]:</span><br><span class="line">            Regions_list &#x3D; setting_info[Projectname][ProjectId]</span><br><span class="line">            bw_info &#x3D; get_bandwidth_info(Regions_list,ProjectId)</span><br><span class="line">            bw_price_info.extend(get_price(bw_info))</span><br><span class="line">    #print bw_price_info</span><br><span class="line">    return bw_price_info</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    collect_sharebandwidth_price(&#123;&quot;chunyu&quot;:&#123;&quot;org-oddm1w&quot;:[&#39;cn-bj2&#39;,&#39;hk&#39;]&#125;, &quot;uhs&quot;:&#123;&quot;org-shbbct&quot;:[&quot;cn-bj2&quot;]&#125;&#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="get-all-price-py"><a href="#get-all-price-py" class="headerlink" title="get_all_price.py"></a>get_all_price.py</h2><blockquote>
+<p>给各实例价格求和，发送到influxdb。可以每天跑一下cron更新下内容。<strong>里面发送的influxDB是事先封装好的包直接导入的，并不是官方包</strong></p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;env python</span><br><span class="line"># -*- coding:utf-8 -*-</span><br><span class="line"></span><br><span class="line"># author: fanquanqing</span><br><span class="line">#import datatime</span><br><span class="line">from collect_eip_price import collect_eip_price</span><br><span class="line">from collect_uhost_price import collect_uhost_price</span><br><span class="line">from collect_sharebandwidth_price import collect_sharebandwidth_price</span><br><span class="line">from collect_udisk_price import collect_udisk_price</span><br><span class="line">from op_tools.api_influxdb import write_data_to_influxdb</span><br><span class="line"></span><br><span class="line">def get_price(setting_info):</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    各个实例price求和,并把实例信息发送到influxdb</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    eip_price&#x3D;0</span><br><span class="line">    uhost_price&#x3D;0</span><br><span class="line">    sharebw_price&#x3D;0</span><br><span class="line">    udisk_price&#x3D;0</span><br><span class="line">    eip_price_info_list &#x3D; collect_eip_price(setting_info)</span><br><span class="line">    for eip_info in eip_price_info_list:</span><br><span class="line">        eip_headers &#x3D; eip_info.keys()</span><br><span class="line">        eip_rows &#x3D; []</span><br><span class="line">        eip_rows.append(eip_info.values())</span><br><span class="line">        #print eip_headers, eip_rows</span><br><span class="line">        # 发送EIP数据到influxdb</span><br><span class="line">        write_data_to_influxdb(&#39;EIP_info_daliy&#39;, eip_headers, eip_rows, [&#39;IP&#39;, &#39;OperatorName&#39;, &#39;ChargeType&#39;])</span><br><span class="line">        eip_price +&#x3D; round(eip_info[&#39;Price&#39;])</span><br><span class="line"></span><br><span class="line">    uhost_price_info_list &#x3D; collect_uhost_price(setting_info)</span><br><span class="line">    for uhost_info in uhost_price_info_list:</span><br><span class="line">        uhost_headers&#x3D;uhost_info.keys()</span><br><span class="line">        uhost_rows&#x3D;[]</span><br><span class="line">        uhost_rows.append(uhost_info.values())</span><br><span class="line">        #print uhost_headers, uhost_rows</span><br><span class="line">        # 发送云主机信息到influxdb</span><br><span class="line">        write_data_to_influxdb(&#39;Uhost_info_daliy&#39;, uhost_headers, uhost_rows, [&#39;Hostname&#39;,&#39;ChargeType&#39;])</span><br><span class="line">        uhost_price +&#x3D; round(uhost_info[&#39;Price&#39;])</span><br><span class="line"></span><br><span class="line">    sharebandwidth_info_list &#x3D; collect_sharebandwidth_price(setting_info)</span><br><span class="line">    for sharebandwidth_info in sharebandwidth_info_list:</span><br><span class="line">        sharebw_headers&#x3D;sharebandwidth_info.keys()</span><br><span class="line">        sharebw_rows&#x3D;[]</span><br><span class="line">        sharebw_rows.append(sharebandwidth_info.values())</span><br><span class="line">        #print sharebw_headers, sharebw_rows</span><br><span class="line">        # 发送共享带宽信息到influxdb</span><br><span class="line">        write_data_to_influxdb(&#39;ShareBandwidth_info_daliy&#39;,sharebw_headers,sharebw_rows,[])</span><br><span class="line">        sharebw_price +&#x3D; round(sharebandwidth_info[&#39;Price&#39;])</span><br><span class="line"></span><br><span class="line">    udisk_info_list&#x3D;collect_udisk_price(setting_info)</span><br><span class="line">    for udisk_info in udisk_info_list:</span><br><span class="line">        udisk_headers&#x3D;udisk_info.keys()</span><br><span class="line">        udisk_rows&#x3D;[]</span><br><span class="line">        udisk_rows.append(udisk_info.values())</span><br><span class="line">        #print udisk_headers, udisk_rows</span><br><span class="line">        write_data_to_influxdb(&#39;Udisk_info_daliy&#39;, udisk_headers,udisk_rows,[&#39;UHostName&#39;,&#39;Region&#39;])</span><br><span class="line">        udisk_price +&#x3D; round(udisk_info[&#39;Price&#39;])</span><br><span class="line">    # 托管机房价格</span><br><span class="line">    physical_price &#x3D; get_physical_host_price()</span><br><span class="line">    total_price&#x3D;eip_price+uhost_price+sharebw_price+udisk_price+physical_price</span><br><span class="line">    # 价格列表</span><br><span class="line">    price_list&#x3D;[eip_price,uhost_price,sharebw_price,udisk_price,total_price]</span><br><span class="line">    price_headers&#x3D;[&#39;eip_price&#39;,&#39;uhost_price&#39;,&#39;sharebw_price&#39;,&#39;udisk_price&#39;,&#39;total_price&#39;]</span><br><span class="line">    price_rows&#x3D;[]</span><br><span class="line">    price_rows.append(price_list)</span><br><span class="line">    write_data_to_influxdb(&#39;Ucloud_price_total_daliy&#39;,price_headers,price_rows,[])</span><br><span class="line"></span><br><span class="line">    #print uhost_price</span><br><span class="line">    return uhost_price</span><br><span class="line"></span><br><span class="line"># 托管机器价格(两个机柜一个10M外网)</span><br><span class="line">def get_physical_host_price():</span><br><span class="line">    host_price &#x3D; 9000*2*12</span><br><span class="line">    tg_cloud_switch_port_price &#x3D; (288*2+217)*12</span><br><span class="line">    tg_bandwidth_price &#x3D; 10*90*12</span><br><span class="line">    physical_price &#x3D; host_price+tg_bandwidth_price+tg_cloud_switch_port_price</span><br><span class="line">    return physical_price</span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    # 可用区列表</span><br><span class="line">    #Regions_list &#x3D; [&#39;cn-bj2&#39;,&#39;hk&#39;]</span><br><span class="line">    # 项目ID列表</span><br><span class="line">    #Project_Id_list &#x3D; [&#39;org-shbbct&#39;,&#39;org-oddm1w&#39;]</span><br><span class="line">    # 项目ID对应关系</span><br><span class="line">    setting_info &#x3D; &#123;&quot;chunyu&quot;:&#123;&quot;org-oddm1w&quot;:[&#39;cn-bj2&#39;,&#39;hk&#39;]&#125;, &quot;uhs&quot;:&#123;&quot;org-shbbct&quot;:[&quot;cn-bj2&quot;]&#125;&#125;</span><br><span class="line">    get_price(setting_info)</span><br></pre></td></tr></table></figure>
+
+<h2 id="grafana效果展示"><a href="#grafana效果展示" class="headerlink" title="grafana效果展示"></a>grafana效果展示</h2><blockquote>
+<p>grafana跟influxDB配合的非常好，设置也非常简单。下面我在下面放几张效果图。</p>
+</blockquote>
+<p><strong>简单查询语句</strong><br><img src="http://or2jd66dq.bkt.clouddn.com/grafana_influxdb.png" alt=""></p>
+<p><strong>table展示效果</strong><br><img src="http://or2jd66dq.bkt.clouddn.com/grafana_ucloud_eip.png" alt=""></p>
+<p><strong>价格图展示</strong><br><img src="http://or2jd66dq.bkt.clouddn.com/grafana_ucloud_price.png" alt=""></p>
+<h2 id="获取实时带宽信息并发送报警到钉钉"><a href="#获取实时带宽信息并发送报警到钉钉" class="headerlink" title="获取实时带宽信息并发送报警到钉钉"></a>获取实时带宽信息并发送报警到钉钉</h2><blockquote>
+<p>这个跟上面的脚本没有关联，只是获取实时带宽使用量的报警脚本。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;env python</span><br><span class="line"># -*- coding: utf-8 -*-</span><br><span class="line"></span><br><span class="line">from sdk import UcloudApiClient</span><br><span class="line">from config import *</span><br><span class="line">import sys</span><br><span class="line">import json</span><br><span class="line">import urllib2</span><br><span class="line">import time</span><br><span class="line">#from op_tools import falcon</span><br><span class="line"></span><br><span class="line">#实例化 API 句柄</span><br><span class="line">localtime &#x3D; time.asctime( time.localtime(time.time()) )</span><br><span class="line"></span><br><span class="line">def get_eip_info():</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    获取EIP对应的主机名，以及EIP信息返回</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    arg_length &#x3D; len(sys.argv)</span><br><span class="line">    ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">    Parameters&#x3D;&#123;&quot;Action&quot;:&quot;DescribeEIP&quot;, &quot;Region&quot;:&quot;cn-bj2&quot;&#125;</span><br><span class="line">    response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters );</span><br><span class="line">    eip_info_list &#x3D; response[&#39;EIPSet&#39;]</span><br><span class="line">    eip_dic &#x3D; &#123;&#125;</span><br><span class="line">    for eip_info in eip_info_list:</span><br><span class="line">        # EIP绑定主机名</span><br><span class="line">        eip_host &#x3D; eip_info[&#39;Resource&#39;][&#39;ResourceName&#39;]</span><br><span class="line">        eip_ip &#x3D; eip_info[&#39;EIPAddr&#39;][0][&#39;IP&#39;].encode(&#39;utf-8&#39;)</span><br><span class="line">        eip_id &#x3D; eip_info[&#39;EIPId&#39;]</span><br><span class="line">        dic &#x3D; &#123;&#125;</span><br><span class="line">        dic[eip_ip] &#x3D; eip_id</span><br><span class="line">        #print &quot;eip_host:%s,dic:%s&quot; % (eip_host,dic)</span><br><span class="line">        eip_dic[eip_host] &#x3D; dic</span><br><span class="line">    #print len(eip_dic)</span><br><span class="line">    eip_dic[&#39;nginx-online1&#39;] &#x3D; &#123;&#39;106.75.28.177&#39;: u&#39;eip-00gv0l&#39;&#125;</span><br><span class="line">    return eip_dic</span><br><span class="line"></span><br><span class="line">def get_eip_usage(eip_dic):</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    获取每个EIP的实时用量(要求EIPid),</span><br><span class="line">    return list:[&#123;ip:usage&#125;...]</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    eip_usage_dic &#x3D; &#123;&#125;</span><br><span class="line">    for eip_host in eip_dic:</span><br><span class="line">        #eip_useage_dic &#x3D; &#123;&#125;</span><br><span class="line">        eip_id&#x3D;eip_dic[eip_host].values()[0].encode(&quot;utf-8&quot;)</span><br><span class="line">        #print eip_id</span><br><span class="line">        ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">        Parameters&#x3D;&#123;</span><br><span class="line">                    &quot;Action&quot;:&quot;DescribeBandwidthUsage&quot;,</span><br><span class="line">                    &quot;Region&quot;:&quot;cn-bj2&quot;,</span><br><span class="line">                    &quot;EIPIds.1&quot;:eip_id,</span><br><span class="line">                &#125;</span><br><span class="line">        response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters);</span><br><span class="line">        #print json.dumps(response, sort_keys&#x3D;True, indent&#x3D;4, separators&#x3D;(&#39;,&#39;, &#39;: &#39;))</span><br><span class="line">        #print response</span><br><span class="line">        eip_usage &#x3D; response[&#39;EIPSet&#39;][0][&#39;CurBandwidth&#39;]</span><br><span class="line">        eip_usage_dic[eip_host]&#x3D;eip_usage</span><br><span class="line">        #eip_usage_list.append(eip_useage_dic)</span><br><span class="line">    return eip_usage_dic</span><br><span class="line"></span><br><span class="line">def sendto_falcon(eip_usage_list):</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    报警发送到falcon</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    collect_step &#x3D; 60</span><br><span class="line">    counter_type &#x3D; falcon.CounterType.GAUGE</span><br><span class="line">    metric &#x3D; &quot;bandwidthusage&quot;</span><br><span class="line">    for eip_usage in eip_usage_list:</span><br><span class="line">        tags&#x3D;&quot;host&#x3D;&quot; + eip_usage.keys()[0]</span><br><span class="line">        value&#x3D;eip_usage.values()[0]</span><br><span class="line">        #print value</span><br><span class="line"></span><br><span class="line">def get_sharebw_info():</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    获取共享带宽的带宽大小，以及所包含的EIP,</span><br><span class="line">    return list:[&#123;&#39;eiplist&#39;:[ip1,ip1],&#39;bandwidth&#39;:20&#125;...]</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line"></span><br><span class="line">    ApiClient &#x3D; UcloudApiClient(base_url, public_key, private_key)</span><br><span class="line">    Parameters&#x3D;&#123;&quot;Action&quot;:&quot;DescribeShareBandwidth&quot;, &quot;Region&quot;:&quot;cn-bj2&quot;&#125;</span><br><span class="line">    response &#x3D; ApiClient.get(&quot;&#x2F;&quot;, Parameters );</span><br><span class="line">    #print json.dumps(response, sort_keys&#x3D;True, indent&#x3D;4, separators&#x3D;(&#39;,&#39;, &#39;: &#39;))</span><br><span class="line">    share_bw_list &#x3D; response[&#39;DataSet&#39;]</span><br><span class="line">    share_bw_info &#x3D; []</span><br><span class="line">    for share_bw in share_bw_list:</span><br><span class="line">        share_bw_dic &#x3D; &#123;&#125;</span><br><span class="line">        bandwidth &#x3D; share_bw[&#39;ShareBandwidth&#39;]</span><br><span class="line">        eip_list &#x3D; []</span><br><span class="line">        for eip_dic in share_bw[&#39;EIPSet&#39;]:</span><br><span class="line">            ip &#x3D; eip_dic[&#39;EIPAddr&#39;][0][&#39;IP&#39;]</span><br><span class="line">            eip_list.append(ip)</span><br><span class="line">        share_bw_dic[&#39;bandwidth&#39;]&#x3D;bandwidth</span><br><span class="line">        share_bw_dic[&#39;eiplist&#39;]&#x3D;eip_list</span><br><span class="line">        share_bw_info.append(share_bw_dic)</span><br><span class="line">    return share_bw_info</span><br><span class="line"></span><br><span class="line">def sum():</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    返回比值，并简单记录log到&#x2F;var&#x2F;log&#x2F;ubandwidth.log</span><br><span class="line">    &#39;&#39;&#39;</span><br><span class="line">    eip_dic &#x3D; get_eip_info()</span><br><span class="line">    #print eip_dic</span><br><span class="line">    eip_to_host &#x3D; &#123;&#125;</span><br><span class="line">    # 通过eip_dic获取IP-host对此应关系dic</span><br><span class="line">    for host in eip_dic:</span><br><span class="line">        eip &#x3D; eip_dic[host].keys()[0]</span><br><span class="line">        eip_to_host[eip]&#x3D;host</span><br><span class="line">    #print eip_to_host</span><br><span class="line">    eip_usage_dic &#x3D; get_eip_usage(eip_dic)</span><br><span class="line">    #print eip_usage_dic</span><br><span class="line">    share_bw_info &#x3D; get_sharebw_info()</span><br><span class="line">    #print share_bw_info</span><br><span class="line">    #各带宽和与带宽比值</span><br><span class="line">    ratios &#x3D; &#123;&#125;</span><br><span class="line">    for share_bandwidth in share_bw_info:</span><br><span class="line">        bandwidth &#x3D; share_bandwidth[&#39;bandwidth&#39;]</span><br><span class="line">        sum &#x3D; 0</span><br><span class="line">        for eip in share_bandwidth[&#39;eiplist&#39;]:</span><br><span class="line">            host &#x3D; eip_to_host[eip]</span><br><span class="line">            usage &#x3D; eip_usage_dic[host]</span><br><span class="line">            sum +&#x3D; usage</span><br><span class="line">        #带宽用量与带宽的比值</span><br><span class="line">        ratio &#x3D; sum&#x2F;bandwidth</span><br><span class="line">        parts &#x3D; [str(bandwidth),str(sum),str(ratio)]</span><br><span class="line">        log &#x3D;localtime + &#39; &#39; + &#39;,&#39;.join(parts) + &#39;\n&#39;</span><br><span class="line">        with open(&#39;&#x2F;var&#x2F;log&#x2F;ubandwidth.log&#39;,&#39;a&#39;) as f:</span><br><span class="line">            f.write(log)</span><br><span class="line">            f.close()</span><br><span class="line"></span><br><span class="line">        ratios[bandwidth]&#x3D;ratio</span><br><span class="line"></span><br><span class="line">    return ratios</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def send_to_dingtalk(content):</span><br><span class="line"></span><br><span class="line">    url &#x3D; &quot;https:&#x2F;&#x2F;oapi.dingtalk.com&#x2F;robot&#x2F;send?access_token&#x3D;17cf865229a63452ff411243b53d64949d5a54b1ee8774e20e1ec7d4c5d60f43&quot;</span><br><span class="line">    #con&#x3D;&#123;&quot;msgtype&quot;:&quot;text&quot;,&quot;text&quot;:&#123;&quot;content&quot;:content&#125;,&quot;isAtAll&quot;: &quot;true&quot;&#125;</span><br><span class="line">    con&#x3D;&#123;&quot;msgtype&quot;:&quot;markdown&quot;,&quot;markdown&quot;:&#123;&quot;title&quot;:&quot;ucloud共享带宽报警&quot;,&quot;text&quot;:content&#125;,&quot;isAtAll&quot;: &quot;ture&quot;&#125;</span><br><span class="line">    jd&#x3D;json.dumps(con)</span><br><span class="line">    req&#x3D;urllib2.Request(url,jd)</span><br><span class="line">    req.add_header(&#39;Content-Type&#39;, &#39;application&#x2F;json&#39;)</span><br><span class="line">    response&#x3D;urllib2.urlopen(req)</span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    ratios&#x3D;sum()</span><br><span class="line">    localtime &#x3D; time.asctime( time.localtime(time.time()) )</span><br><span class="line">    for bw in ratios:</span><br><span class="line">        if ratios[bw] &gt; 0.8:</span><br><span class="line">            content &#x3D; u&quot;# **ucloud共享带宽报警** - %d兆那个。。。\n\n - 用量超过百分之80 \n - **值**:%f \n &gt; [请排查...](https:&#x2F;&#x2F;console.ucloud.cn&#x2F;unet&#x2F;sharebandwidth)&quot; % (bw,ratios[bw])</span><br><span class="line">            send_to_dingtalk(content)</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/python/" rel="tag"># python</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/08/nginx%E4%B9%8Blocation-upstream-rewrite/" rel="prev" title="nginx之location,upstream,rewrite">
+      <i class="fa fa-chevron-left"></i> nginx之location,upstream,rewrite
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/12/%E8%AE%B0%E5%BD%95%E4%B8%BB%E6%9C%BAhistory/" rel="next" title="记录主机history">
+      记录主机history <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#apk-py"><span class="nav-number">1.</span> <span class="nav-text">apk.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#conf-py"><span class="nav-number">2.</span> <span class="nav-text">conf.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#collect-uhost-price-py"><span class="nav-number">3.</span> <span class="nav-text">collect_uhost_price.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#collect-eip-price-py"><span class="nav-number">4.</span> <span class="nav-text">collect_eip_price.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#collect-udisk-price-py"><span class="nav-number">5.</span> <span class="nav-text">collect_udisk_price.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#collect-sharebandwidth-price-py"><span class="nav-number">6.</span> <span class="nav-text">collect_sharebandwidth_price.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#get-all-price-py"><span class="nav-number">7.</span> <span class="nav-text">get_all_price.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#grafana效果展示"><span class="nav-number">8.</span> <span class="nav-text">grafana效果展示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#获取实时带宽信息并发送报警到钉钉"><span class="nav-number">9.</span> <span class="nav-text">获取实时带宽信息并发送报警到钉钉</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

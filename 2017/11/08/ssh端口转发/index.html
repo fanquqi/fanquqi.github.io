@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="下午闲了一会儿，想起前年实习搬服务器的时候，当时公司的服务器，被我们安装到某个地方的内网之后，没有外网IP只是通过NAT访问外网，但是公司服务器可以直接主动登陆上去操作，当时我还以为是端口转发，或者VPN，两个月之后运维主管离职，从某团空降来一个运维领导，试了一下iptables的端口转发。。。然后采用了VPN，无疑我感觉这很low逼。所以这项神秘的技术一直被我记到现在。。  下边先介绍下ssh">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ssh端口转发">
+<meta property="og:url" content="https://fanquqi.github.io/2017/11/08/ssh%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="下午闲了一会儿，想起前年实习搬服务器的时候，当时公司的服务器，被我们安装到某个地方的内网之后，没有外网IP只是通过NAT访问外网，但是公司服务器可以直接主动登陆上去操作，当时我还以为是端口转发，或者VPN，两个月之后运维主管离职，从某团空降来一个运维领导，试了一下iptables的端口转发。。。然后采用了VPN，无疑我感觉这很low逼。所以这项神秘的技术一直被我记到现在。。  下边先介绍下ssh">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-11-08T08:20:56.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.011Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="ssh">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/11/08/ssh%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ssh端口转发 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/11/08/ssh%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ssh端口转发
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-11-08 16:20:56" itemprop="dateCreated datePublished" datetime="2017-11-08T16:20:56+08:00">2017-11-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>下午闲了一会儿，想起前年实习搬服务器的时候，当时公司的服务器，被我们安装到某个地方的内网之后，没有外网IP只是通过NAT访问外网，但是公司服务器可以直接主动登陆上去操作，当时我还以为是端口转发，或者VPN，两个月之后运维主管离职，从某团空降来一个运维领导，试了一下iptables的端口转发。。。然后采用了VPN，无疑我感觉这很low逼。所以这项神秘的技术一直被我记到现在。。</p>
+</blockquote>
+<p><strong>下边先介绍下ssh的端口转发</strong></p>
+<blockquote>
+<p>SSH 会自动加密和解密所有 SSH 客户端与服务端之间的网络数据。但是，SSH 还同时提供了一个非常有用的功能，这就是端口转发。它能够将其他 TCP 端口的网络数据通过 SSH 链接来转发，并且自动提供了相应的加密及解密服务。这一过程有时也被叫做“隧道”（tunneling），这是因为 SSH 为其他 TCP 链接提供了一个安全的通道来进行传输而得名。例如，Telnet，SMTP，LDAP 这些 TCP 应用均能够从中得益，避免了用户名，密码以及隐私信息的明文传输。而与此同时，如果您工作环境中的防火墙限制了一些网络端口的使用，但是允许 SSH 的连接，那么也是能够通过将 TCP 端口转发来使用 SSH 进行通讯。总的来说 SSH 端口转发能够提供两大功能：</p>
+</blockquote>
+<ul>
+<li><p>加密 SSH Client 端至 SSH Server 端之间的通讯数据。</p>
+</li>
+<li><p>突破防火墙的限制完成一些之前无法建立的 TCP 连接。</p>
+</li>
+</ul>
+<h1 id="本地端口转发"><a href="#本地端口转发" class="headerlink" title="本地端口转发"></a>本地端口转发</h1><p>格式 <code>ssh -L &lt;local port&gt;:&lt;remote host&gt;:&lt;remote port&gt; &lt;SSH hostname&gt;</code></p>
+<p>例如 我们将本地8000端口转发到提供<code>LDAP</code>服务的主机Ldapserver_host1 的389端口（ldap_server默认端口）可以这样写</p>
+<pre><code>ssh -L 7001:localhost:389 LdapServer_host1</code></pre><p>这个时候<code>netstat -tpln</code> 看</p>
+<pre><code>tcp        0      0 127.0.0.1:7001              0.0.0.0:*                   LISTEN           15889/ldap</code></pre><p>本地端口已经起来了 ，但是只允许在本机访问，这个时候区别的机器用 <code>nmap</code>扫描是看不到<code>7001</code>端口的</p>
+<p>但是怎么让别的主机也可以使用呢？</p>
+<p>SH 同时提供了 GatewayPorts 关键字，我们可以通过指定它与其他机器共享这个本地端口转发。</p>
+<pre><code>ssh -g -L &lt;local port&gt;:&lt;remote host&gt;:&lt;remote port&gt; &lt;SSH hostname&gt; </code></pre><p>这个时候可以使用ssh 提供的<code>Gateway Port</code>关键字<code>-g</code></p>
+<pre><code>ssh -g -L 8001:0.0.0.0:22 localhost</code></pre><p><strong>我们把这台主机的22端口转发到本机的8001端口</strong></p>
+<p>然后这时候我们可以到另一台机器上 <code>nmap</code>发现本机 8001端口已经打开了  然后试下 ssh -p 8001 是可以登得上的。</p>
+<h1 id="远程端口转发"><a href="#远程端口转发" class="headerlink" title="远程端口转发"></a>远程端口转发</h1><p>其实这就是所谓的<code>ssh反向隧道</code></p>
+<p>主机介绍：</p>
+<table>
+<thead>
+<tr>
+<th align="center">主机名</th>
+<th>是否有外网地址</th>
+<th>地址</th>
+<th>用户</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">server1</td>
+<td>是</td>
+<td>123.21.201.189</td>
+<td>fanquqi</td>
+</tr>
+<tr>
+<td align="center">server2</td>
+<td>否</td>
+<td>localhost</td>
+<td>fanquqi</td>
+</tr>
+<tr>
+<td align="center">server3</td>
+<td>否</td>
+<td>localhost</td>
+<td>fanquqi</td>
+</tr>
+</tbody></table>
+<p>主要参数</p>
+<ul>
+<li><code>-R</code>  反向代理</li>
+<li><code>-N</code>  不执行远程指令</li>
+<li><code>-f</code>  后台执行</li>
+</ul>
+<p>命令格式</p>
+<pre><code>ssh -NfR 6789:localhost:22 fanquqi@123.21.201.189</code></pre><p>在server2上执行上述命令，执行完输完密码之后，我们可以在server1上看下端口  正常6789端口已经是监听了的。</p>
+<p>然后 我们可以在 这台外网地址机器上执行 </p>
+<pre><code>ssh -p 6789 fanquqi@localhost</code></pre><p>即可连接到连接到NAT后面的server2。。</p>
+<p>可以看到上面列出了三台机器，第三台还没有用到。我们来用一下，试下让两台没有外网的机器建立连接。</p>
+<p>先杀掉<code>server1</code>上6789端口。<br>在<code>server3</code>上执行</p>
+<pre><code>ssh -fN -R 123.21.201.189:6789:localhost:22 fanquqi@123.21.201.189</code></pre><p>然后在<code>server1</code>上确认6789打开</p>
+<p>这时候在server2上就可以连接server3了<br>只需要运行</p>
+<pre><code>ssh -p 6789 fanquqi@123.21.201.189</code></pre><p>即可。其实不止server1,是任何有网络的机器    </p>
+<p>其实我们还可以把公钥互相传一下  就不用来回输密码了。 如果nat后面那台主机不在手边，经常上不去  建议使用<code>autossh</code>提供隧道断开自动重连功能。或者更改ssh配置文件<code>~/.ssh/config</code> </p>
+<pre><code>ServerAliveInterval 
+ServerAliveCountMax </code></pre><p>更改如上两个参数</p>
+<p>第一个参数表示如果服务器（外网）没数据发来则过一段时间客户端（内网）会发送一个空包到服务器，以保持tcp长连接，默认值为0，表示不会发心跳包，这里可以设置一分钟。。<br>第二个参数表示，如果服务器（内网）没有收到心跳包指定次数，就中断连接。可以设置为无限大。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/ssh/" rel="tag"># ssh</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/10/25/python%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-PP%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8/" rel="prev" title="python并行计算-PP模块使用">
+      <i class="fa fa-chevron-left"></i> python并行计算-PP模块使用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/11/14/kafka%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82/" rel="next" title="kafka技术细节">
+      kafka技术细节 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#本地端口转发"><span class="nav-number">1.</span> <span class="nav-text">本地端口转发</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#远程端口转发"><span class="nav-number">2.</span> <span class="nav-text">远程端口转发</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

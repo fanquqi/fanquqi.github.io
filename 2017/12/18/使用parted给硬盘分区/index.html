@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="首先磁盘的分区方式分为MBR和GPT。而二者有何区别？ MBR最早的磁盘分区表都是MBR的全称是Master Boot Record（主引导记录），之所以叫“主引导记录”，是因为它是存在于驱动器开始部分的一个特殊的启动扇区。这个扇区包含了已安装的操作系统的启动加载器和驱动器的逻辑分区信息。我们面试的时候可能会问到Linux系统的启动过程，然后当时可能都会说， 通电BIOS–&gt;加载MBR主引导">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用parted给硬盘分区">
+<meta property="og:url" content="https://fanquqi.github.io/2017/12/18/%E4%BD%BF%E7%94%A8parted%E7%BB%99%E7%A1%AC%E7%9B%98%E5%88%86%E5%8C%BA/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="首先磁盘的分区方式分为MBR和GPT。而二者有何区别？ MBR最早的磁盘分区表都是MBR的全称是Master Boot Record（主引导记录），之所以叫“主引导记录”，是因为它是存在于驱动器开始部分的一个特殊的启动扇区。这个扇区包含了已安装的操作系统的启动加载器和驱动器的逻辑分区信息。我们面试的时候可能会问到Linux系统的启动过程，然后当时可能都会说， 通电BIOS–&gt;加载MBR主引导">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-12-18T08:29:07.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.022Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="parted,磁盘分区">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/12/18/%E4%BD%BF%E7%94%A8parted%E7%BB%99%E7%A1%AC%E7%9B%98%E5%88%86%E5%8C%BA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>使用parted给硬盘分区 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/12/18/%E4%BD%BF%E7%94%A8parted%E7%BB%99%E7%A1%AC%E7%9B%98%E5%88%86%E5%8C%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用parted给硬盘分区
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-12-18 16:29:07" itemprop="dateCreated datePublished" datetime="2017-12-18T16:29:07+08:00">2017-12-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E5%9F%BA%E7%A1%80%E8%BF%90%E7%BB%B4/" itemprop="url" rel="index"><span itemprop="name">基础运维</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先磁盘的分区方式分为MBR和GPT。<br>而二者有何区别？</p>
+<h2 id="MBR"><a href="#MBR" class="headerlink" title="MBR"></a>MBR</h2><p>最早的磁盘分区表都是MBR的全称是Master Boot Record（主引导记录），之所以叫“主引导记录”，是因为它是存在于驱动器开始部分的一个特殊的启动扇区。这个扇区包含了已安装的操作系统的启动加载器和驱动器的逻辑分区信息。<br>我们面试的时候可能会问到Linux系统的启动过程，然后当时可能都会说，</p>
+<p><strong>通电BIOS–&gt;加载MBR主引导记录–&gt;操作系统–&gt;加载内核。。。。</strong></p>
+<p>其中BIOS（Basic Input/Output System）是烫在内存上的代码，很少一部分空间，所以要做的事儿很少也都是写死的，（目前BIOS因为空间很小等，存在很大的局限性，正在被取代）BIOS 必须确定要使用哪个设备来引导系统。当找到一个引导设备之后，第一阶段的引导加载程序就被装入 RAM 并执行。这个引导加载程序（第一个扇区即MBR），其作用是加载第二阶段的引导加载程序。</p>
+<p><code>MBR</code>是由分区程序（如Fdisk，Parted）所产生的，它不依赖任何操作系统，而且硬盘引导程序也是可以改变的，从而能够实现多系统引导。</p>
+<p>“主引导记录”只有64个字节，放不了太多东西。它的主要作用是，<code>告诉计算机到硬盘的哪一个位置去找操作系统。</code></p>
+<p>主引导记录由三个部分组成：</p>
+<p>　　（1） 第1-446字节：调用操作系统的机器码。</p>
+<p>　　（2） 第447-510字节：分区表（Partition table）。</p>
+<p>　　（3） 第511-512字节：主引导记录签名（0x55和0xAA）。</p>
+<p>其中<code>MBR</code>目前对于我们运维来说，最大的局限就在于<strong>在MBR分区表中，一个分区最大的容量为2T</strong>,所以我们想要做一个大于2.2T的分区，只能用GPT。</p>
+<h2 id="GPT"><a href="#GPT" class="headerlink" title="GPT"></a>GPT</h2><p><a href="https://zh.wikipedia.org/wiki/GUID%E7%A3%81%E7%A2%9F%E5%88%86%E5%89%B2%E8%A1%A8">wikipedia地址</a></p>
+<p>简言之。GPT就是用来替代MBR的，Intel计划用<code>UEFI+GPT</code> 代替 <code>BIOS+MBR</code>,因为MBR不支持2.2T以上的硬盘的分区。<br>全局唯一标识分区表（GUID Partition Table，缩写：GPT）是一个实体硬盘的分区结构。它是EFI(可扩展固件接口标准)的一部分，用来替代BIOS中的主引导记录分区表。<br>在MBR硬盘中，分区信息直接存储于主引导记录(MBR)中（主引导记录中还存储着系统的引导程序）。但在GPT硬盘中，分区表的位置信息储存在GPT头中。但出于兼容性考虑，硬盘的第一个扇区仍然用作MBR，之后才是GPT头。</p>
+<p>所以相比<code>MBR</code>,<code>GPT</code>具有以下优点</p>
+<ul>
+<li>突破MBR 4个主分区限制，每个磁盘最多支持128个主分区。</li>
+<li>支持大于2T的分区，最大卷可达18EB。</li>
+</ul>
+<h2 id="UEFI"><a href="#UEFI" class="headerlink" title="UEFI"></a>UEFI</h2><p>是由EFI1.10为基础发展起来的，它的所有者已不再是Intel，而是一个称作Unified EFI Form的国际组织，贡献者有Intel，Microsoft，AMI，等几个大厂，属于open source。</p>
+<h2 id="parted-对GPT分区"><a href="#parted-对GPT分区" class="headerlink" title="parted 对GPT分区"></a>parted 对GPT分区</h2><p>fdisk命令对于大于2T的分区无法划分，所以用fdisk无法看到parted划分的GPT格式的分区。</p>
+<p>parted是一个可以分区并进行分区调整的工具，他可以创建，破坏，移动，复制，调整ext2 linux-swap fat fat32 reiserfs类型的分区，可以创建，调整，移动Macintosh的HFS分区，检测jfs，ntfs，ufs，xfs分区。</p>
+<p>实际使用parted可以像fdisk一样交互进行，也可以使用命令行的模式。<br>我只记录了命令行模式</p>
+<p><strong>首先查看当前分区情况</strong></p>
+<pre><code>parted -l</code></pre><p><strong>创建新的分区表</strong></p>
+<pre><code>mklabel [label-type]
+例：
+parted -m /dev/sdb mklabel gpt
+// parted -m 打印出方便机器解析的输出 设备名 mklabel 分区表type</code></pre><p><strong>创建新的分区</strong></p>
+<pre><code>mkpart [part-type [fs-type] start end]
+例：
+parted /dev/sda mkpart data ext3 93.5GB 100%
+// parted 设备名 mkpart 分区名 文件系统（不支持ext4,xfs） 开始位置（如果磁盘有其他分区需要查看其他分区结束位置） 结束位置</code></pre><p><strong>删除分区</strong></p>
+<pre><code>rm 分区名</code></pre><p>创建分区表，与新建分区可以合成一条命令</p>
+<pre><code>parted /dev/sdb mklabel gpt mkpart data ext3 93.5GB 100%</code></pre><p>parted分区之前需要卸载磁盘 ，如果所有的硬盘分为一个raid，只有一个/dev/sda 的话 </p>
+<ul>
+<li><p>执行parted分区命令</p>
+<p>  parted /dev/sda mkpart data 93.5GB 100%</p>
+</li>
+</ul>
+<p>-重启生效</p>
+<pre><code>reboot</code></pre><ul>
+<li><p>格式化，这个时候可以使用xfs或者ext4（因为parted本身不支持xfs和ext4）</p>
+<p> /sbin/mkfs.xfs -f /dev/sdan</p>
+</li>
+<li><p>挂载</p>
+</li>
+</ul>
+<p>mount /dev/sda6 /data</p>
+<ul>
+<li><p>写进fstab，重启生效    </p>
+<p>  echo “/dev/sda6               /data                   xfs    defaults        1 2” &gt;&gt; /etc/fstab  </p>
+</li>
+</ul>
+<p>参考：<br><a href="http://www.g33knotes.org/2013/07/creating-aligned-xfs-partition-using.html">http://www.g33knotes.org/2013/07/creating-aligned-xfs-partition-using.html</a><br><a href="https://www.ibm.com/developerworks/cn/linux/l-lpic1-104-1/index.html">https://www.ibm.com/developerworks/cn/linux/l-lpic1-104-1/index.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/parted-%E7%A3%81%E7%9B%98%E5%88%86%E5%8C%BA/" rel="tag"># parted,磁盘分区</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/12/12/Django%E6%A8%A1%E6%9D%BF/" rel="prev" title="Django模板">
+      <i class="fa fa-chevron-left"></i> Django模板
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/12/19/python%E9%98%B2%E6%AD%A2SQL%E6%B3%A8%E5%85%A5/" rel="next" title="python防止SQL注入">
+      python防止SQL注入 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MBR"><span class="nav-number">1.</span> <span class="nav-text">MBR</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPT"><span class="nav-number">2.</span> <span class="nav-text">GPT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UEFI"><span class="nav-number">3.</span> <span class="nav-text">UEFI</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#parted-对GPT分区"><span class="nav-number">4.</span> <span class="nav-text">parted 对GPT分区</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

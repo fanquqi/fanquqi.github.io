@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="grafana上面不支持open-falcon的大写metric(mymon metric更改小写) (这是openfalcon的bug，falcon-plus中已经修复)  但是我们现在使用的falcon没有升级，而且升级的得计划暂时没有安排。我们只能手动更改metric不用大写尽量用小写。以下记录mymon更改。mymon是使用go语言编写的，用来监控mysql的插件。mymon代码链接由于之">
+<meta property="og:type" content="article">
+<meta property="og:title" content="falcon问题处理">
+<meta property="og:url" content="https://fanquqi.github.io/2017/06/08/falcon%E9%97%AE%E9%A2%98%E5%A4%84%E7%90%86/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="grafana上面不支持open-falcon的大写metric(mymon metric更改小写) (这是openfalcon的bug，falcon-plus中已经修复)  但是我们现在使用的falcon没有升级，而且升级的得计划暂时没有安排。我们只能手动更改metric不用大写尽量用小写。以下记录mymon更改。mymon是使用go语言编写的，用来监控mysql的插件。mymon代码链接由于之">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-06-08T08:14:29.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.988Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="falcon, 监控">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/06/08/falcon%E9%97%AE%E9%A2%98%E5%A4%84%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>falcon问题处理 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/06/08/falcon%E9%97%AE%E9%A2%98%E5%A4%84%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          falcon问题处理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-06-08 16:14:29" itemprop="dateCreated datePublished" datetime="2017-06-08T16:14:29+08:00">2017-06-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E7%9B%91%E6%8E%A7/" itemprop="url" rel="index"><span itemprop="name">监控</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="grafana上面不支持open-falcon的大写metric-mymon-metric更改小写"><a href="#grafana上面不支持open-falcon的大写metric-mymon-metric更改小写" class="headerlink" title="grafana上面不支持open-falcon的大写metric(mymon metric更改小写)"></a>grafana上面不支持open-falcon的大写metric(mymon metric更改小写)</h2><blockquote>
+<p>(这是openfalcon的bug，falcon-plus中已经修复)</p>
+</blockquote>
+<p>但是我们现在使用的falcon没有升级，而且升级的得计划暂时没有安排。我们只能手动更改metric不用大写尽量用小写。<br>以下记录mymon更改。<br><strong>mymon</strong>是使用go语言编写的，用来监控mysql的插件。<a href="https://github.com/open-falcon/mymon">mymon代码链接</a><br>由于之前的mymon是通过ansible 脚本直接git pull下来的，所以有源码在，可以更改之后再build一下。<br>找到<code>metric.go</code>修改大写的metric为小写。 修改完脚本如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">    &quot;fmt&quot;</span><br><span class="line">    &quot;os&quot;</span><br><span class="line">    &quot;time&quot;</span><br><span class="line">    &quot;strings&quot; #添加string</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">const (</span><br><span class="line">    TIME_OUT &#x3D; 30</span><br><span class="line"></span><br><span class="line">    ORIGIN   &#x3D; &quot;GAUGE&quot;</span><br><span class="line">    DELTA_PS &#x3D; &quot;COUNTER&quot;</span><br><span class="line">    DELTA    &#x3D; &quot;&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; COUNTER: Speed per second</span><br><span class="line">&#x2F;&#x2F; GAUGE: Original, DEFAULT</span><br><span class="line">var DataType &#x3D; map[string]string&#123;</span><br><span class="line">    &quot;Innodb_buffer_pool_reads&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Innodb_buffer_pool_read_requests&quot;: DELTA_PS,</span><br><span class="line">    &quot;Innodb_compress_time&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Innodb_data_fsyncs&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Innodb_data_read&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Innodb_data_reads&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Innodb_data_writes&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Innodb_data_written&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Innodb_last_checkpoint_at&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Innodb_log_flushed_up_to&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Innodb_log_sequence_number&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Innodb_mutex_os_waits&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Innodb_mutex_spin_rounds&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Innodb_mutex_spin_waits&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Innodb_pages_flushed_up_to&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Innodb_rows_deleted&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Innodb_rows_inserted&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Innodb_rows_locked&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Innodb_rows_modified&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Innodb_rows_read&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Innodb_rows_updated&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Innodb_row_lock_time&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Innodb_row_lock_waits&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Innodb_uncompress_time&quot;:           DELTA_PS,</span><br><span class="line"></span><br><span class="line">    &quot;Binlog_event_count&quot;: DELTA_PS,</span><br><span class="line">    &quot;Binlog_number&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Slave_count&quot;:        DELTA_PS,</span><br><span class="line"></span><br><span class="line">    &quot;Com_admin_commands&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_assign_to_keycache&quot;:    DELTA_PS,</span><br><span class="line">    &quot;Com_alter_db&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Com_alter_db_upgrade&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_alter_event&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_alter_function&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_alter_procedure&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Com_alter_server&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_alter_table&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_alter_tablespace&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_analyze&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Com_begin&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Com_binlog&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_call_procedure&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_change_db&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Com_change_master&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_check&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Com_checksum&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Com_commit&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_create_db&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Com_create_event&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_create_function&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Com_create_index&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_create_procedure&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_create_server&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_create_table&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_create_trigger&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_create_udf&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_create_user&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_create_view&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_dealloc_sql&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_delete&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_delete_multi&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_do&quot;:                    DELTA_PS,</span><br><span class="line">    &quot;Com_drop_db&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Com_drop_event&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_drop_function&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_drop_index&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_drop_procedure&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_drop_server&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_drop_table&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_drop_trigger&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_drop_user&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Com_drop_view&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Com_empty_query&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_execute_sql&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_flush&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Com_grant&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Com_ha_close&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Com_ha_open&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Com_ha_read&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Com_help&quot;:                  DELTA_PS,</span><br><span class="line">    &quot;Com_insert&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_insert_select&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_install_plugin&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_kill&quot;:                  DELTA_PS,</span><br><span class="line">    &quot;Com_load&quot;:                  DELTA_PS,</span><br><span class="line">    &quot;Com_lock_tables&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_optimize&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Com_preload_keys&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_prepare_sql&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_purge&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Com_purge_before_date&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Com_release_savepoint&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Com_rename_table&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_rename_user&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_repair&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_replace&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Com_replace_select&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_reset&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Com_resignal&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Com_revoke&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_revoke_all&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_rollback&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Com_rollback_to_savepoint&quot;: DELTA_PS,</span><br><span class="line">    &quot;Com_savepoint&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Com_select&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_set_option&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_signal&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_show_authors&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_show_binlog_events&quot;:    DELTA_PS,</span><br><span class="line">    &quot;Com_show_binlogs&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_show_charsets&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_show_collations&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Com_show_contributors&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Com_show_create_db&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_show_create_event&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Com_show_create_func&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_show_create_proc&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_show_create_table&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Com_show_create_trigger&quot;:   DELTA_PS,</span><br><span class="line">    &quot;Com_show_databases&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_show_engine_logs&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_show_engine_mutex&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Com_show_engine_status&quot;:    DELTA_PS,</span><br><span class="line">    &quot;Com_show_events&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_show_errors&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_show_fields&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_show_function_status&quot;:  DELTA_PS,</span><br><span class="line">    &quot;Com_show_grants&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_show_keys&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Com_show_master_status&quot;:    DELTA_PS,</span><br><span class="line">    &quot;Com_show_open_tables&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_show_plugins&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_show_privileges&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Com_show_procedure_status&quot;: DELTA_PS,</span><br><span class="line">    &quot;Com_show_processlist&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_show_profile&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_show_profiles&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_show_relaylog_events&quot;:  DELTA_PS,</span><br><span class="line">    &quot;Com_show_slave_hosts&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_show_slave_status&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Com_show_status&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_show_storage_engines&quot;:  DELTA_PS,</span><br><span class="line">    &quot;Com_show_table_status&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Com_show_tables&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_show_triggers&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_show_variables&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_show_warnings&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_slave_start&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_slave_stop&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_stmt_close&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_stmt_execute&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_stmt_fetch&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_stmt_prepare&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_stmt_reprepare&quot;:        DELTA_PS,</span><br><span class="line">    &quot;Com_stmt_reset&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_stmt_send_long_data&quot;:   DELTA_PS,</span><br><span class="line">    &quot;Com_truncate&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Com_uninstall_plugin&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Com_unlock_tables&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Com_update&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_update_multi&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Com_xa_commit&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Com_xa_end&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Com_xa_prepare&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_xa_recover&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Com_xa_rollback&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Com_xa_start&quot;:              DELTA_PS,</span><br><span class="line"></span><br><span class="line">    &quot;Aborted_clients&quot;:            DELTA_PS,</span><br><span class="line">    &quot;Aborted_connects&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Access_denied_errors&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Binlog_bytes_written&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Binlog_cache_disk_use&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Binlog_cache_use&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Binlog_stmt_cache_disk_use&quot;: DELTA_PS,</span><br><span class="line">    &quot;Binlog_stmt_cache_use&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Bytes_received&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Bytes_sent&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Connections&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Created_tmp_disk_tables&quot;:    DELTA_PS,</span><br><span class="line">    &quot;Created_tmp_files&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Created_tmp_tables&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Handler_delete&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Handler_read_first&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Handler_read_key&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Handler_read_last&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Handler_read_next&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Handler_read_prev&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Handler_read_rnd&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Handler_read_rnd_next&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Handler_update&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Handler_write&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Opened_files&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Opened_tables&quot;:              DELTA_PS,</span><br><span class="line">    &quot;Opened_table_definitions&quot;:   DELTA_PS,</span><br><span class="line">    &quot;Qcache_hits&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Qcache_inserts&quot;:             DELTA_PS,</span><br><span class="line">    &quot;Qcache_lowmem_prunes&quot;:       DELTA_PS,</span><br><span class="line">    &quot;Qcache_not_cached&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Queries&quot;:                    DELTA_PS,</span><br><span class="line">    &quot;Questions&quot;:                  DELTA_PS,</span><br><span class="line">    &quot;Select_full_join&quot;:           DELTA_PS,</span><br><span class="line">    &quot;Select_full_range_join&quot;:     DELTA_PS,</span><br><span class="line">    &quot;Select_range_check&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Select_scan&quot;:                DELTA_PS,</span><br><span class="line">    &quot;Slow_queries&quot;:               DELTA_PS,</span><br><span class="line">    &quot;Sort_merge_passes&quot;:          DELTA_PS,</span><br><span class="line">    &quot;Sort_range&quot;:                 DELTA_PS,</span><br><span class="line">    &quot;Sort_rows&quot;:                  DELTA_PS,</span><br><span class="line">    &quot;Sort_scan&quot;:                  DELTA_PS,</span><br><span class="line">    &quot;Table_locks_immediate&quot;:      DELTA_PS,</span><br><span class="line">    &quot;Table_locks_waited&quot;:         DELTA_PS,</span><br><span class="line">    &quot;Threads_created&quot;:            DELTA_PS,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type MysqlIns struct &#123;</span><br><span class="line">    Host string</span><br><span class="line">    Port int</span><br><span class="line">    Tag  string</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func dataType(key_ string) string &#123;</span><br><span class="line">    if v, ok :&#x3D; DataType[key_]; ok &#123;</span><br><span class="line">        return v</span><br><span class="line">    &#125;</span><br><span class="line">    return ORIGIN</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type MetaData struct &#123;</span><br><span class="line">    Metric      string      &#96;json:&quot;metric&quot;&#96;      &#x2F;&#x2F;key</span><br><span class="line">    Endpoint    string      &#96;json:&quot;endpoint&quot;&#96;    &#x2F;&#x2F;hostname</span><br><span class="line">    Value       interface&#123;&#125; &#96;json:&quot;value&quot;&#96;       &#x2F;&#x2F; number or string</span><br><span class="line">    CounterType string      &#96;json:&quot;counterType&quot;&#96; &#x2F;&#x2F; GAUGE  原值   COUNTER 差值(ps)</span><br><span class="line">    Tags        string      &#96;json:&quot;tags&quot;&#96;        &#x2F;&#x2F; port&#x3D;3306,k&#x3D;v</span><br><span class="line">    Timestamp   int64       &#96;json:&quot;timestamp&quot;&#96;</span><br><span class="line">    Step        int64       &#96;json:&quot;step&quot;&#96;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (m *MetaData) String() string &#123;</span><br><span class="line">    s :&#x3D; fmt.Sprintf(&quot;MetaData Metric:%s Endpoint:%s Value:%v CounterType:%s Tags:%s Timestamp:%d Step:%d&quot;,</span><br><span class="line">        m.Metric, m.Endpoint, m.Value, m.CounterType, m.Tags, m.Timestamp, m.Step)</span><br><span class="line">    return s</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func NewMetric(name string) *MetaData &#123;</span><br><span class="line">    return &amp;MetaData&#123;</span><br><span class="line">        Metric:      strings.ToLower(name), #name 改为strings.ToLower(name)</span><br><span class="line">        Endpoint:    hostname(),</span><br><span class="line">        CounterType: dataType(name),</span><br><span class="line">        Tags:        fmt.Sprintf(&quot;port&#x3D;%d&quot;, cfg.Port),</span><br><span class="line">        Timestamp:   time.Now().Unix(),</span><br><span class="line">        Step:        60,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func hostname() string &#123;</span><br><span class="line">    host :&#x3D; cfg.Endpoint</span><br><span class="line">    if host !&#x3D; &quot;&quot; &#123;</span><br><span class="line">        return host</span><br><span class="line">    &#125;</span><br><span class="line">    host, err :&#x3D; os.Hostname()</span><br><span class="line">    if err !&#x3D; nil &#123;</span><br><span class="line">        host &#x3D; cfg.Host</span><br><span class="line">    &#125;</span><br><span class="line">    return host</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (m *MetaData) SetValue(v interface&#123;&#125;) &#123;</span><br><span class="line">    m.Value &#x3D; v</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之后在mymon目录 执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">go get .&#x2F;...</span><br><span class="line">go build -o mymon</span><br></pre></td></tr></table></figure>
+<p>即可 </p>
+<p>之后可以去数据库手动删掉openfalcon 过期的metric(但是新的metric并没有更新，反而旧metric没了数据，可以试着修改endpoint，然后去数据区删除旧的endpoint)</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/falcon-%E7%9B%91%E6%8E%A7/" rel="tag"># falcon, 监控</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/08/sublime%E4%BD%BF%E7%94%A8/" rel="prev" title="sublime使用">
+      <i class="fa fa-chevron-left"></i> sublime使用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/09/%E8%BF%90%E7%BB%B4%E5%B7%A5%E5%85%B7%E4%B9%8Bsar%E5%91%BD%E4%BB%A4/" rel="next" title="运维工具之sar命令">
+      运维工具之sar命令 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#grafana上面不支持open-falcon的大写metric-mymon-metric更改小写"><span class="nav-number">1.</span> <span class="nav-text">grafana上面不支持open-falcon的大写metric(mymon metric更改小写)</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="falcon 介绍 由于zabbix监控的可拓展性不是很高，业务的监控并不是很灵活，所以运维打算换成灵活度更好的open-falcon，他是小米公司推出的一款开源软件，基于go语言开发，安装比较方便。因为有着比较好看及灵活UI所以我们使用起来也是十分方便。但是社区相比zabbix小很多，坑也多一点，毕竟第一个吃螃蟹的人得付出点勇气。   优点说明 水平扩展能力：支持每个周期上亿次的数据采集、告警判">
+<meta property="og:type" content="article">
+<meta property="og:title" content="zabbix迁移到open-falcon">
+<meta property="og:url" content="https://fanquqi.github.io/2017/06/06/zabbix%E8%BF%81%E7%A7%BB%E5%88%B0open-falcon/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="falcon 介绍 由于zabbix监控的可拓展性不是很高，业务的监控并不是很灵活，所以运维打算换成灵活度更好的open-falcon，他是小米公司推出的一款开源软件，基于go语言开发，安装比较方便。因为有着比较好看及灵活UI所以我们使用起来也是十分方便。但是社区相比zabbix小很多，坑也多一点，毕竟第一个吃螃蟹的人得付出点勇气。   优点说明 水平扩展能力：支持每个周期上亿次的数据采集、告警判">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-06-06%20%E4%B8%8B%E5%8D%885.57.09.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-06-09%20%E4%B8%8B%E5%8D%886.27.47.png">
+<meta property="article:published_time" content="2017-06-06T09:53:38.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.019Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="falcon, 监控">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-06-06%20%E4%B8%8B%E5%8D%885.57.09.png">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/06/06/zabbix%E8%BF%81%E7%A7%BB%E5%88%B0open-falcon/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>zabbix迁移到open-falcon | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/06/06/zabbix%E8%BF%81%E7%A7%BB%E5%88%B0open-falcon/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          zabbix迁移到open-falcon
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-06-06 17:53:38" itemprop="dateCreated datePublished" datetime="2017-06-06T17:53:38+08:00">2017-06-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E7%9B%91%E6%8E%A7/" itemprop="url" rel="index"><span itemprop="name">监控</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="falcon-介绍"><a href="#falcon-介绍" class="headerlink" title="falcon 介绍"></a>falcon 介绍</h1><blockquote>
+<p>由于zabbix监控的可拓展性不是很高，业务的监控并不是很灵活，所以运维打算换成灵活度更好的open-falcon，他是小米公司推出的一款开源软件，基于go语言开发，安装比较方便。因为有着比较好看及灵活UI所以我们使用起来也是十分方便。但是社区相比zabbix小很多，坑也多一点，毕竟第一个吃螃蟹的人得付出点勇气。</p>
+</blockquote>
+<p><img src="http://or2jd66dq.bkt.clouddn.com/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-06-06%20%E4%B8%8B%E5%8D%885.57.09.png" alt=""></p>
+<h2 id="优点说明"><a href="#优点说明" class="headerlink" title="优点说明"></a>优点说明</h2><ul>
+<li><p>水平扩展能力：支持每个周期上亿次的数据采集、告警判定、历史数据存储和查询</p>
+</li>
+<li><p>高效率的告警策略管理：高效的portal、支持策略模板、模板继承和覆盖、多种告警方式、支持callback调用</p>
+</li>
+<li><p>人性化的告警设置：最大告警次数、告警级别、告警恢复通知、告警暂停、不同时段不同阈值</p>
+</li>
+<li><p>高效率的graph组件：单机支撑200万metric的上报、归档、存储（周期为1分钟）</p>
+</li>
+<li><p>高效的历史数据query组件：采用rrdtool的数据归档策略，秒级返回上百个metric一年的历史数据</p>
+</li>
+<li><p>dashboard：多维度的数据展示，用户自定义Screen</p>
+</li>
+<li><p>高可用：整个系统无核心单点，易运维，易部署，可水平扩展</p>
+</li>
+<li><p>开发语言： 整个系统的后端，全部golang编写，portal和dashboard使用python编写。</p>
+</li>
+</ul>
+<h2 id="组件介绍"><a href="#组件介绍" class="headerlink" title="组件介绍"></a>组件介绍</h2><h3 id="agent-组件"><a href="#agent-组件" class="headerlink" title="agent 组件"></a><strong>agent 组件</strong></h3><pre><code>* 监控客户端 相当于zabbix_agent 收集监控数据，提供接口供我们写脚本上传数据
+* 支持自发现，默认自带很多基本监控，它的自定义监控指标通过HBS（HBS读取portal数据库）获得
+* 每隔60秒push给Transfer。agent与Transfer建立了长连接，数据发送速度比较快，agent提供了一个http接口/v1/push用于接收用户手工push的一些数据，然后通过长连接迅速转发给Transfer。</code></pre><h3 id="Aggregater组件-集群聚合模块。（目前我们还没有应用）"><a href="#Aggregater组件-集群聚合模块。（目前我们还没有应用）" class="headerlink" title="Aggregater组件   集群聚合模块。（目前我们还没有应用）"></a><strong>Aggregater组件</strong>   集群聚合模块。（目前我们还没有应用）</h3><pre><code>* 聚合某集群下的所有机器的某个指标的值，比如所有机器的qps加和才是整个集群的qps，所有机器的request_fail数量 ÷ 所有机器的request_total数量=整个集群的请求失败率然后push回监控server端。</code></pre><h3 id="hbs（heartbeat-Server）组件"><a href="#hbs（heartbeat-Server）组件" class="headerlink" title="hbs（heartbeat Server）组件"></a><strong>hbs</strong>（heartbeat Server）组件</h3><pre><code>心跳服务器，公司所有agent都会连到HBS，每分钟发一次心跳请求。
+agent发送心跳信息给HBS的时候，会把hostname、ip、agent version、plugin version等信息告诉HBS，HBS负责更新host表。 插入到portal数据库中</code></pre><h3 id="portal组件"><a href="#portal组件" class="headerlink" title="portal组件"></a><strong>portal组件</strong></h3><pre><code>Portal是用来配置报警策略的，策略存放于数据库中，通过hbs的读取传递到agent端</code></pre><h3 id="transfer组件"><a href="#transfer组件" class="headerlink" title="transfer组件"></a><strong>transfer组件</strong></h3><pre><code>transfer是数据转发服务。它接收agent上报的数据，然后按照哈希规则进行数据分片、并将分片后的数据分别push给graph&amp;judge等组件。</code></pre><h3 id="judge组件"><a href="#judge组件" class="headerlink" title="judge组件"></a><strong>judge组件</strong></h3><pre><code>Judge用于告警判断，agent将数据push给Transfer，Transfer不但会转发给Graph组件来绘图，还会转发给Judge用于判断是否触发告警。</code></pre><h3 id="alarm组件"><a href="#alarm组件" class="headerlink" title="alarm组件"></a><strong>alarm组件</strong></h3><pre><code>alarm模块是处理报警event的，judge产生的报警event写入redis，alarm从redis读取处理</code></pre><h3 id="graph组件"><a href="#graph组件" class="headerlink" title="graph组件"></a><strong>graph组件</strong></h3><pre><code>graph是存储绘图数据的组件。graph组件 接收transfer组件推送上来的监控数据，同时处理query组件的查询请求、返回绘图数据。</code></pre><h3 id="query组件"><a href="#query组件" class="headerlink" title="query组件"></a><strong>query组件</strong></h3><pre><code>提供统一的绘图数据查询入口。query组件接收查询请求，根据一致性哈希算法去相应的graph实例查询不同metric的数据，然后汇总拿到的数据，最后统一返回给用户。</code></pre><h3 id="dashboard组件"><a href="#dashboard组件" class="headerlink" title="dashboard组件"></a><strong>dashboard组件</strong></h3><pre><code>dashboard是面向用户的查询界面。在这里，用户可以看到push到graph中的所有数据，并查看其趋势图。</code></pre><h3 id="fe组件"><a href="#fe组件" class="headerlink" title="fe组件"></a><strong>fe组件</strong></h3><pre><code>导航界面</code></pre><h3 id="nodata组件"><a href="#nodata组件" class="headerlink" title="nodata组件"></a><strong>nodata组件</strong></h3><pre><code>nodata用于检测监控数据的上报异常。nodata和实时报警judge模块协同工作，过程为: 配置了nodata的采集项超时未上报数据，nodata生成一条默认的模拟数据；用户配置相应的报警策略，收到mock数据就产生报警。采集项上报异常检测，作为judge模块的一个必要补充，能够使judge的实时报警功能更加可靠、完善</code></pre><h3 id="task组件"><a href="#task组件" class="headerlink" title="task组件"></a><strong>task组件</strong></h3><pre><code>task是监控系统一个必要的辅助模块。定时任务，实现了如下几个功能：
+index更新。包括图表索引的全量更新 和 垃圾索引清理。
+falcon服务组件的自身状态数据采集。定时任务了采集了transfer、graph、task这三个服务的内部状态数据。
+falcon自检控任务。</code></pre><h1 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h1><blockquote>
+<p>部署使用的二进制包部署，方便快捷，agent使用ansible安装到所有机器上，设置systemctl启动。其他组件包括redis安装到运维机器上。</p>
+</blockquote>
+<p>参照官网的部署<br>这里略过</p>
+<h1 id="数据采集"><a href="#数据采集" class="headerlink" title="数据采集"></a>数据采集</h1><blockquote>
+<p>falcon 数据采集分为以下三种方式</p>
+</blockquote>
+<ul>
+<li>=基础库= 业务代码加载基础库、服务实例在运行过程中主动采集并push相关数据到agent</li>
+<li>=nginx_lua_module= 嵌在nginx中主动采集业务相关指标 如状态码次数，QPS，服务可用度等</li>
+<li>=自定义数据采集=  自己通过脚本push到agent，查看<a href="https://git.chunyu.me/op/op_tools/blob/master/op_tools/falcon.py">https://git.chunyu.me/op/op_tools/blob/master/op_tools/falcon.py</a> 这个很灵活 可以采集很多东西</li>
+</ul>
+<h2 id="数据模型"><a href="#数据模型" class="headerlink" title="数据模型"></a>数据模型</h2><p><img src="http://or2jd66dq.bkt.clouddn.com/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-06-09%20%E4%B8%8B%E5%8D%886.27.47.png" alt=""></p>
+<ul>
+<li>metric: <ul>
+<li>最核心的字段，代表这个数据采集项具体度量的是什么东西，比如内存的使用量、某个接口的调用次数</li>
+</ul>
+</li>
+<li>endpoint: <ul>
+<li>监控实体，代表metric的主体，比如metric是内存使用量，那么endpoint就表示该metric属于哪台机器，也可以表示某个业务比如medweb，其实endpoint是一个特殊的tag。</li>
+</ul>
+</li>
+<li>tags: <ul>
+<li>这是一组逗号分隔的键值对，用来对metric进行进一步的描述，比如service=falcon,location=beijing</li>
+</ul>
+</li>
+<li>timestamp: <ul>
+<li>UNIX时间戳，表示产生该数据的时间</li>
+</ul>
+</li>
+<li>value: <ul>
+<li>整型或者浮点型，代表该metric在指定时间点的取值</li>
+</ul>
+</li>
+<li>step: <ul>
+<li>整型，表示该数据采集项的汇报周期，这对于后续的监控策略配置、图表展示很重要，必须明确指定</li>
+</ul>
+</li>
+<li>counterType: <ul>
+<li>只能是COUNTER或者GAUGE二选一，前者表示该采集项为计数器类型，后者表示其为原值；对于计数器类型，告警判定以及图表展示前，会被先计算为速率</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/falcon-%E7%9B%91%E6%8E%A7/" rel="tag"># falcon, 监控</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/06/Mac%E8%BD%AF%E4%BB%B6%E4%BD%BF%E7%94%A8/" rel="prev" title="Mac软件使用">
+      <i class="fa fa-chevron-left"></i> Mac软件使用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/06/08/sublime%E4%BD%BF%E7%94%A8/" rel="next" title="sublime使用">
+      sublime使用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#falcon-介绍"><span class="nav-number">1.</span> <span class="nav-text">falcon 介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#优点说明"><span class="nav-number">1.1.</span> <span class="nav-text">优点说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#组件介绍"><span class="nav-number">1.2.</span> <span class="nav-text">组件介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#agent-组件"><span class="nav-number">1.2.1.</span> <span class="nav-text">agent 组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Aggregater组件-集群聚合模块。（目前我们还没有应用）"><span class="nav-number">1.2.2.</span> <span class="nav-text">Aggregater组件   集群聚合模块。（目前我们还没有应用）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hbs（heartbeat-Server）组件"><span class="nav-number">1.2.3.</span> <span class="nav-text">hbs（heartbeat Server）组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#portal组件"><span class="nav-number">1.2.4.</span> <span class="nav-text">portal组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#transfer组件"><span class="nav-number">1.2.5.</span> <span class="nav-text">transfer组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#judge组件"><span class="nav-number">1.2.6.</span> <span class="nav-text">judge组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#alarm组件"><span class="nav-number">1.2.7.</span> <span class="nav-text">alarm组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#graph组件"><span class="nav-number">1.2.8.</span> <span class="nav-text">graph组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#query组件"><span class="nav-number">1.2.9.</span> <span class="nav-text">query组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dashboard组件"><span class="nav-number">1.2.10.</span> <span class="nav-text">dashboard组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fe组件"><span class="nav-number">1.2.11.</span> <span class="nav-text">fe组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#nodata组件"><span class="nav-number">1.2.12.</span> <span class="nav-text">nodata组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#task组件"><span class="nav-number">1.2.13.</span> <span class="nav-text">task组件</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#部署"><span class="nav-number">2.</span> <span class="nav-text">部署</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据采集"><span class="nav-number">3.</span> <span class="nav-text">数据采集</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据模型"><span class="nav-number">3.1.</span> <span class="nav-text">数据模型</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

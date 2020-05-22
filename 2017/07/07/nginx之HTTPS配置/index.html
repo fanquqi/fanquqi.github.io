@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="https现在是标配了，HTTPS 可以给用户带来更安全、比如减少了被劫持的概率，更好隐私保护的网络体验，这些好处大家都耳熟能详，本文不再赘述。现在很多浏览器都在推行HTTPS的普及。尽快升级吧。  其实大体就是分为ssl证书申请和配置HTTPS两个步骤 证书申请这次介绍并没有从申请证书开始，因为之前已经申请过了，申请步骤请参考SSL 证书主要有两个功能：加密和身份证明，通常需要购买，也有免费的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nginx之HTTPS配置">
+<meta property="og:url" content="https://fanquqi.github.io/2017/07/07/nginx%E4%B9%8BHTTPS%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="https现在是标配了，HTTPS 可以给用户带来更安全、比如减少了被劫持的概率，更好隐私保护的网络体验，这些好处大家都耳熟能详，本文不再赘述。现在很多浏览器都在推行HTTPS的普及。尽快升级吧。  其实大体就是分为ssl证书申请和配置HTTPS两个步骤 证书申请这次介绍并没有从申请证书开始，因为之前已经申请过了，申请步骤请参考SSL 证书主要有两个功能：加密和身份证明，通常需要购买，也有免费的">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-07-07T07:15:38.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.998Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="nginx">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/07/07/nginx%E4%B9%8BHTTPS%E9%85%8D%E7%BD%AE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>nginx之HTTPS配置 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/07/07/nginx%E4%B9%8BHTTPS%E9%85%8D%E7%BD%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          nginx之HTTPS配置
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-07-07 15:15:38" itemprop="dateCreated datePublished" datetime="2017-07-07T15:15:38+08:00">2017-07-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E5%9F%BA%E7%A1%80%E8%BF%90%E7%BB%B4/" itemprop="url" rel="index"><span itemprop="name">基础运维</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>https现在是标配了，HTTPS 可以给用户带来更安全、比如减少了被劫持的概率，更好隐私保护的网络体验，这些好处大家都耳熟能详，本文不再赘述。现在很多浏览器都在推行HTTPS的普及。尽快升级吧。</p>
+</blockquote>
+<p>其实大体就是分为<code>ssl证书申请</code>和<code>配置HTTPS</code>两个步骤</p>
+<h2 id="证书申请"><a href="#证书申请" class="headerlink" title="证书申请"></a>证书申请</h2><p>这次介绍并没有从申请证书开始，因为之前已经申请过了，申请步骤请<a href="https://aotu.io/notes/2016/08/16/nginx-https/index.html">参考</a><br>SSL 证书主要有两个功能：加密和身份证明，通常需要购买，也有免费的，通过第三方 SSL 证书机构颁发。分为企业级别和个人级别。<br>SSL 具体加密实现<a href="http://www.ruanyifeng.com/blog/2014/02/ssl_tls.html">参考</a><br>查看证书相关配置，包括哪个机构颁发的，过期时间等等信息可以到<a href="https://www.chinassl.net">https://www.chinassl.net</a> 自助查看</p>
+<h2 id="nginx-HTTPS配置"><a href="#nginx-HTTPS配置" class="headerlink" title="nginx HTTPS配置"></a>nginx HTTPS配置</h2><p>首先我们把得到的domain.key domain.crt 放到 nginx的conf下，<br>可以在nginx.conf 的<code>server</code>中配置</p>
+<p><strong>基础配置</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"> server &#123;</span><br><span class="line">     listen              443 ssl http2;</span><br><span class="line">     #证书文件(注意路径及权限)</span><br><span class="line">     ssl on;</span><br><span class="line">     ssl_certificate     example.com.crt;</span><br><span class="line">     #私钥文件</span><br><span class="line">     ssl_certificate_key example.com.key;</span><br><span class="line">     ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line">     ssl_ciphers         HIGH:!aNULL:!MD5;</span><br><span class="line"></span><br><span class="line">#....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>必须使用监听命令 listen 的 ssl 参数和定义服务器证书文件和私钥文件</p>
+<p><code>ssl_protocols</code> 可以用来限制连接只包含 SSL/TLS 的加強版本，默认值如上。<br><code>ssl_ciphers</code> 选择加密套件，不同的浏览器所支持的套件（和顺序）可能会不同。这里指定的是OpenSSL库能够识别的写法，你可以通过 openssl -v cipher ‘RC4:HIGH:!aNULL:!MD5’（后面是你所指定的套件加密算法） 来看所支持算法。</p>
+<p><strong>加强 HTTPS 安全性</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ssl_prefer_server_ciphers ON;</span><br><span class="line">add_header X-Frame-Options DENY;</span><br><span class="line">add_header X-Content-Type-Options nosniff;</span><br><span class="line">add_header X-Xss-Protection 1;</span><br></pre></td></tr></table></figure>
+
+<p><code>ssl_prefer_server_ciphers ON</code>设置协商加密算法时，优先使用我们服务端的加密套件，而不是客户端浏览器的加密套件。<br><code>add_header X-Frame-Options DENY</code>减少点击劫持</p>
+<p><strong>HTTPS优化参数</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ssl_session_cache shared:SSL:10m;</span><br><span class="line"></span><br><span class="line">ssl_session_timeout 10m;</span><br><span class="line">ssl_buffer_size 1400;</span><br></pre></td></tr></table></figure>
+
+<p><code>ssl_session_cache shared:SSL:10m;</code> 设置ssl/tls会话缓存的类型和大小。如果设置了这个参数一般是shared，buildin可能会参数内存碎片，默认是none，和off差不多，停用缓存。如shared:SSL:10m表示我所有的nginx工作进程共享ssl会话缓存，官网介绍说1M可以存放约4000个sessions。<br><code>ssl_session_timeout 10m;</code>  客户端可以重用会话缓存中ssl参数的过期时间。<br><code>ssl_buffer_size 1400;</code> 缓冲区调优，从1.5.9版本开始,Nginx允许使用ssl_buffer_size指令自定义TLS缓冲区的大小，默认值是 16 KB,但是这个值不一定是最优化的,尤其是你希望首字节数据被尽早发送时,有报告显示使 用1400字节的配置可以显著减少延迟。<a href="http://fangpeishi.com/optimizing-tls-record-size.html">参考</a></p>
+<p><strong>配置参考</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">ssl                  on;</span><br><span class="line">ssl_session_timeout  30m;</span><br><span class="line">ssl_protocols  TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line"></span><br><span class="line">ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA:!CAMELLIA;</span><br><span class="line"></span><br><span class="line">ssl_prefer_server_ciphers   on;</span><br><span class="line">ssl_buffer_size 1400;</span><br><span class="line"></span><br><span class="line">ssl_session_cache    shared:SSL:10m;</span><br><span class="line">ssl_certificate      domain.crt;</span><br><span class="line">ssl_certificate_key  domain.key;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/nginx/" rel="tag"># nginx</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/06/influxdb%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/" rel="prev" title="influxdb使用笔记">
+      <i class="fa fa-chevron-left"></i> influxdb使用笔记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/08/nginx%E4%B9%8Blocation-upstream-rewrite/" rel="next" title="nginx之location,upstream,rewrite">
+      nginx之location,upstream,rewrite <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#证书申请"><span class="nav-number">1.</span> <span class="nav-text">证书申请</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nginx-HTTPS配置"><span class="nav-number">2.</span> <span class="nav-text">nginx HTTPS配置</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

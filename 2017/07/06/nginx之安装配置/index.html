@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="nginx 相关知识参考网站Tengine  nginx 首先从安装配置说起问题说起  安装 一般都是源码编译安装，直接解压编译安装就好没有啥可说的 一般需要安装PCRE zlib openssl 库 以及所需要模块例如openLDAP等  特别说明安装完成之后再添加模块,需要重启服务，reload不会生效。参考链接 配置 nginx的配置是一门很深的功课，首先我们要对基本的http协议特别了解，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nginx之安装配置">
+<meta property="og:url" content="https://fanquqi.github.io/2017/07/06/nginx%E4%B9%8B%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="nginx 相关知识参考网站Tengine  nginx 首先从安装配置说起问题说起  安装 一般都是源码编译安装，直接解压编译安装就好没有啥可说的 一般需要安装PCRE zlib openssl 库 以及所需要模块例如openLDAP等  特别说明安装完成之后再添加模块,需要重启服务，reload不会生效。参考链接 配置 nginx的配置是一门很深的功课，首先我们要对基本的http协议特别了解，">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-07-06T11:52:30.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.999Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="nginx">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/07/06/nginx%E4%B9%8B%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>nginx之安装配置 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/07/06/nginx%E4%B9%8B%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          nginx之安装配置
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-07-06 19:52:30" itemprop="dateCreated datePublished" datetime="2017-07-06T19:52:30+08:00">2017-07-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E5%9F%BA%E7%A1%80%E8%BF%90%E7%BB%B4/" itemprop="url" rel="index"><span itemprop="name">基础运维</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>nginx 相关知识参考网站<br><a href="http://tengine.taobao.org/">Tengine</a></p>
+<blockquote>
+<p>nginx 首先从安装配置说起问题说起</p>
+</blockquote>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><blockquote>
+<p>一般都是源码编译安装，直接解压编译安装就好没有啥可说的 一般需要安装PCRE zlib openssl 库 以及所需要模块例如openLDAP等</p>
+</blockquote>
+<p><strong>特别说明</strong><br>安装完成之后再添加模块,需要重启服务，reload不会生效。<br><a href="http://taokey.blog.51cto.com/4633273/1318719">参考链接</a></p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><blockquote>
+<p>nginx的配置是一门很深的功课，首先我们要对基本的http协议特别了解，配置过程可能要各种rewrite，各种location。不要慌，一点一点来。</p>
+</blockquote>
+<h2 id="配置文件参数详解"><a href="#配置文件参数详解" class="headerlink" title="配置文件参数详解"></a>配置文件参数详解</h2><blockquote>
+<p>首先对<code>nginx.conf</code>里面的各个配置项进行一下解释。 </p>
+</blockquote>
+<p>首先说下少数几个高级配置，一般写在开头，模块配置之上<br><strong>进程运行的用户组</strong> </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">user  nginx nginx;</span><br></pre></td></tr></table></figure>
+
+<p><strong>进程数</strong> 一般跟CPU核数相匹配。nginx启动后有多少个worker处理请求，不包括master，(master不处理请求，二十主要接受客户端的请求并分配给worker处理)这里还涉及到下边要说的<code>worker_connections</code>, 正常被大家接受的nginx最大连接数就是靠这两个计算出来的.</p>
+<ul>
+<li>nginx作为http服务器的时候：<ul>
+<li>max_clients = worker_processes * worker_connections</li>
+</ul>
+</li>
+<li>nginx作为反向代理服务器的时候：<ul>
+<li>max_clients = worker_processes * worker_connections/4</li>
+</ul>
+</li>
+</ul>
+<p>具体为什么去<a href="http://liuqunying.blog.51cto.com/3984207/1420556">参考</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">worker_processes  8;</span><br></pre></td></tr></table></figure>
+
+<p><strong>最大打开文件数量</strong> 这个如果没有设置会使用linux系统默认的文件最大打开数 <code>ulimit -a</code>可以查看到。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">worker_rlimit_nofile 65535;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Events模块"><a href="#Events模块" class="headerlink" title="Events模块"></a>Events模块</h3><p>这里包含nginx所有处理连接的设置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">events &#123;</span><br><span class="line">    worker_connections 2048;</span><br><span class="line"></span><br><span class="line">    use epoll;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>worker_connections</code>表示一个worker同时打开最大连接数。<br><code>use epoll</code>定义轮询方法 如果你的内核为linux 2.6+ 应该使用epoll异步非阻塞模型</p>
+<h3 id="http模块"><a href="#http模块" class="headerlink" title="http模块"></a>http模块</h3><blockquote>
+<p>HTTP模块控制着nginx http处理的所有核心特性</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line"> </span><br><span class="line">    server_tokens off;</span><br><span class="line"> </span><br><span class="line">    sendfile on;</span><br><span class="line"></span><br><span class="line">    tcp_nopush on;</span><br><span class="line">    tcp_nodelay on;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>server_tokens</code> 这个只是在错误页面不显示nginx版本，为了安全。<br><code>sendfile</code> ,<code>tcp_nopush</code>,<code>tcp_nodelay</code>这三条一般同时出现 提高读写速度 提升性能 ，tcp_nopush 依赖sendfile, tcp_nodelay 不缓存数据，(禁用nagle算法，发送小数据不缓存直接发)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">log_format main &#39;$remote_addr - - [$time_local] &quot;$request&quot; $status $body_bytes_sent &quot;$http_referer&quot; &#39;</span><br><span class="line">                &#39;&quot;$http_user_agent&quot; [$request_time, $upstream_response_time] $host ($remote_port) &quot;sid&#x3D;$cookie_sessionid&quot;&#39;;</span><br><span class="line">access_log  logs&#x2F;access.log  main;</span><br></pre></td></tr></table></figure>
+
+<p>定义日志格式 <code>main</code> 下边引用该格式。其实可以设置成json格式的，以后收集解析也方便。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">lingering_close off;</span><br><span class="line">keepalive_timeout 5;</span><br><span class="line">send_timeout 20;</span><br><span class="line">proxy_connect_timeout 30;</span><br><span class="line">proxy_read_timeout 20;</span><br><span class="line">proxy_send_timeout 20;</span><br></pre></td></tr></table></figure>
+
+<p><code>lingering_close</code> 定义关闭连接的方式，有三个选项 <strong>off|on|always</strong> <code>off</code>：请求完成之后，关闭连接，不管此时有没有收到客户端数据；<code>on</code>是中间值，一般情况下在关闭连接前都会处理连接上的用户发送的数据，除了有些情况下在业务上认定这之后的数据是不必要的；<code>always</code>无条件处理完所有用户请求。Tengine 默认off效率高些，但是存在误杀状况，nginx默认on 算个小坑。</p>
+<p><code>keepalive_timeout</code> 给客户端分配keep-alive链接超时时间</p>
+<p><code>send_timeout</code> 发送响应的超时时间，两个客户端请求之间的时间</p>
+<p>这几个一般用在nginx做反向代理的时候<br><code>proxy_connect_timeout</code> 后端服务器连接的超时时间_发起握手等候响应超时时间<br><code>proxy_read_timeout</code> 后端服务器处理请求的时间<br><code>proxy_send_timeout</code> 后端服务器数据回传时间_就是在规定时间之内后端服务器必须传完所有的数据</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">include &#x2F;etc&#x2F;nginx&#x2F;mime.types;</span><br><span class="line">default_type application&#x2F;octet-stream;</span><br></pre></td></tr></table></figure>
+
+<p>include只是一个在当前文件中包含另一个文件内容的指令。这里我们使用它来加载稍后会用到的一系列的MIME类型。其实就是content-type与扩展名的映射。在客户端发来一个请求之后，nginx通过扩展名找到对应的content-type,下载返回的头信息中，浏览器收到之后会按照这个类型做解析展示。这样就不至于发生css文件本当做html一样当文本展示了。如果在mime.types中没有找到，会使用default_type</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">## GZIP Setting</span><br><span class="line">gzip  on;</span><br><span class="line">gzip_min_length  1000;</span><br><span class="line">gzip_buffers     4 8k;</span><br><span class="line">gzip_http_version  1.0;</span><br><span class="line">gzip_comp_level  5;</span><br><span class="line">gzip_types       text&#x2F;plain text&#x2F;css application&#x2F;x-javascript application&#x2F;json application&#x2F;xml;</span><br></pre></td></tr></table></figure>
+
+<p>gzip是GNU zip的缩写，它是一个GNU自由软件的文件压缩程序，可以极大的加速网站.有时压缩比率高到80%,近来测试了一下,最少都有40%以上,还是相当不错的。</p>
+<p><code>gzip</code><br>决定是否开启gzip模块</p>
+<p><code>gzip_min_length</code><br>当返回内容大于此值时才会使用gzip进行压缩,以K为单位,当值为0时，所有页面都进行压缩<br><code>gzip_buffers</code><br>设置gzip申请内存的大小,其作用是按块大小的倍数申请内存空间<br><code>gzip_http_version</code><br>用于识别http协议的版本，早期的浏览器不支持gzip压缩，用户会看到乱码，所以为了支持前期版本加了此选项,目前此项基本可以忽略<br><code>gzip_comp_level</code><br>设置gzip压缩等级，等级越底压缩速度越快文件压缩比越小，反之速度越慢文件压缩比越大<br><code>gzip_types</code><br>设置需要压缩的MIME类型,非设置值不进行压缩</p>
+<h2 id="server模块"><a href="#server模块" class="headerlink" title="server模块"></a>server模块</h2><blockquote>
+<p>server模块是http的子模块，定义虚拟主机</p>
+</blockquote>
+<p>格式</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen      80;</span><br><span class="line">    server_name map.baidu.com www.baidu.com; </span><br><span class="line">    client_max_body_size 10m;</span><br><span class="line">    root   &#x2F;Users&#x2F;yangyi&#x2F;www;</span><br><span class="line">    index  index.php index.html index.htm; </span><br><span class="line">    charset utf-8;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>server {}</code> server标志虚拟主机开始，在 {} 中配置<br><code>listen</code>监听 80端口<br><code>server_name</code>用来指定IP地址或者域名，多个域名之间用空格分开。这里指定域名为map.baidu.com 或者<a href="http://www.baidu.com。">www.baidu.com。</a><br><code>client_max_body_size</code>  文件上传大小<br><code>charset</code> 声明网站默认编码格式</p>
+<p>直接转发到到10.0.0.1:9000，这几个proxy_set_header的意思是改变请求头的Host为客户端的Host，ip 否则在下层的服务端会认为客户端是这台代理的nginx。<br>X-Forwarded-For 是一个 HTTP 扩展头部。HTTP/1.1（RFC 2616）协议并没有对它的定义，它最开始是由 Squid 这个缓存代理软件引入，用来表示 HTTP 请求端真实 IP。如今它已经成为事实上的标准，被各大 HTTP 代理、负载均衡等转发服务广泛使用，并被写入 RFC 7239（Forwarded HTTP Extension）标准之中。<br>格式如下</p>
+<blockquote>
+<p>X-Forwarded-For: client, proxy1, proxy2</p>
+</blockquote>
+<p>可以看到，XFF 的内容由「英文逗号 + 空格」隔开的多个部分组成，最开始的是离服务端最远的设备 IP，然后是每一级代理设备的 IP。<br>如果一个 HTTP 请求到达服务器之前，经过了三个代理 Proxy1、Proxy2、Proxy3，IP 分别为 IP1、IP2、IP3，用户真实 IP 为 IP0，那么按照 XFF 标准，服务端最终会收到以下信息：</p>
+<blockquote>
+<p>X-Forwarded-For: IP0, IP1, IP2</p>
+</blockquote>
+<p>这个在多级代理的时候可以设置下，逻辑关系更清晰。</p>
+<h2 id="location-模块"><a href="#location-模块" class="headerlink" title="location 模块"></a>location 模块</h2><blockquote>
+<p>在server内部</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">            root   &#x2F;Users&#x2F;yangyi&#x2F;www;</span><br><span class="line">            index  index.php index.html index.htm;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">    proxy_set_header Host $host;</span><br><span class="line">    proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">    proxy_set_header X-Forwarded-For $remote_addr;</span><br><span class="line">    proxy_pass http:&#x2F;&#x2F;10.0.0.1:9000;</span><br><span class="line">    proxy_redirect default;</span><br><span class="line">    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>一个配置样例</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">user www-data;</span><br><span class="line"></span><br><span class="line">pid &#x2F;var&#x2F;run&#x2F;nginx.pid;</span><br><span class="line"></span><br><span class="line">worker_processes auto;</span><br><span class="line"></span><br><span class="line">worker_rlimit_nofile 100000;</span><br><span class="line"></span><br><span class="line"> </span><br><span class="line">events &#123;</span><br><span class="line"></span><br><span class="line">    worker_connections 2048;</span><br><span class="line">    multi_accept on;</span><br><span class="line">    use epoll;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    server_tokens off;</span><br><span class="line">    sendfile on;</span><br><span class="line">    tcp_nopush on;</span><br><span class="line">    tcp_nodelay on;</span><br><span class="line">    log_format main &#39;$remote_addr - - [$time_local] &quot;$request&quot; $status $body_bytes_sent &quot;$http_referer&quot; &#39;</span><br><span class="line">                &#39;&quot;$http_user_agent&quot; [$request_time, $upstream_response_time] $host ($remote_port) &quot;sid&#x3D;$cookie_sessionid&quot;&#39;;</span><br><span class="line">    access_log  logs&#x2F;access.log  main;</span><br><span class="line"></span><br><span class="line">    error_log &#x2F;var&#x2F;log&#x2F;nginx&#x2F;error.log crit;</span><br><span class="line"> </span><br><span class="line"></span><br><span class="line">    keepalive_timeout 10;</span><br><span class="line"></span><br><span class="line">    client_header_timeout 10;</span><br><span class="line"></span><br><span class="line">    client_body_timeout 10;</span><br><span class="line">    reset_timedout_connection on;</span><br><span class="line"></span><br><span class="line">    send_timeout 10;</span><br><span class="line">    limit_conn_zone $binary_remote_addr zone&#x3D;addr:5m;</span><br><span class="line">    limit_conn addr 100;</span><br><span class="line">    include &#x2F;etc&#x2F;nginx&#x2F;mime.types;</span><br><span class="line">    default_type text&#x2F;html;</span><br><span class="line">    charset UTF-8;</span><br><span class="line">    gzip on;</span><br><span class="line">    gzip_disable &quot;msie6&quot;;</span><br><span class="line">    gzip_proxied any;</span><br><span class="line">    gzip_min_length 1000;</span><br><span class="line">    gzip_comp_level 6;</span><br><span class="line">    gzip_types text&#x2F;plain text&#x2F;css application&#x2F;json application&#x2F;x-javascript text&#x2F;xml application&#x2F;xml application&#x2F;xml+rss text&#x2F;javascript;</span><br><span class="line">    open_file_cache max&#x3D;100000 inactive&#x3D;20s;</span><br><span class="line">    open_file_cache_valid 30s;</span><br><span class="line">    open_file_cache_min_uses 2;</span><br><span class="line">    open_file_cache_errors on;</span><br><span class="line">    include &#x2F;etc&#x2F;nginx&#x2F;conf.d&#x2F;*.conf;</span><br><span class="line">    include &#x2F;etc&#x2F;nginx&#x2F;sites-enabled&#x2F;*;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="在nginx配置文件中使用系统环境变量"><a href="#在nginx配置文件中使用系统环境变量" class="headerlink" title="在nginx配置文件中使用系统环境变量"></a>在nginx配置文件中使用系统环境变量</h2><p>方法: 借助lua的<code>os.getenv</code> 函数</p>
+<p>1, 声明变量 </p>
+<pre><code>env test_path;</code></pre><p>2, 获取变量</p>
+<pre><code>在server{} 模块中
+# TEST_PATH 为系统环境变量
+set_by_lua $test_path &apos;return os.getenv(&quot;TEST_PATH&quot;)&apos;; </code></pre><p>3, 引用变量</p>
+<pre><code>access_log $test_path main;</code></pre><p>最后 关于nginx和http https等的设置可以参考<a href="https://imququ.com/">博客</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/nginx/" rel="tag"># nginx</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/05/%E8%AE%B0%E4%B8%80%E6%AC%A1PHP%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2/" rel="prev" title="记一次PHP服务部署">
+      <i class="fa fa-chevron-left"></i> 记一次PHP服务部署
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/07/06/influxdb%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/" rel="next" title="influxdb使用笔记">
+      influxdb使用笔记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#安装"><span class="nav-number">1.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#配置"><span class="nav-number">2.</span> <span class="nav-text">配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#配置文件参数详解"><span class="nav-number">2.1.</span> <span class="nav-text">配置文件参数详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Events模块"><span class="nav-number">2.1.1.</span> <span class="nav-text">Events模块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#http模块"><span class="nav-number">2.1.2.</span> <span class="nav-text">http模块</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#server模块"><span class="nav-number">2.2.</span> <span class="nav-text">server模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#location-模块"><span class="nav-number">2.3.</span> <span class="nav-text">location 模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在nginx配置文件中使用系统环境变量"><span class="nav-number">2.4.</span> <span class="nav-text">在nginx配置文件中使用系统环境变量</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

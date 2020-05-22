@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="之前开发的一套后台报表系统，现在页面越来越多，又搞了个内网域名，有的时候会被安全部的检查攻击，所以必须搞一个登录验证的功能。说起来也好写。因为毕竟Django有整套的解决方案。   使用的是Django的（authentication）认证框架。 没有写注册功能（因为根本不需要） 没有写登出（好像也不需要）  Django拥有一个内置的认证（authentication）框架用来操作用户认证（a">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Django登录验证">
+<meta property="og:url" content="https://fanquqi.github.io/2018/03/30/Django%E7%99%BB%E5%BD%95%E9%AA%8C%E8%AF%81/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="之前开发的一套后台报表系统，现在页面越来越多，又搞了个内网域名，有的时候会被安全部的检查攻击，所以必须搞一个登录验证的功能。说起来也好写。因为毕竟Django有整套的解决方案。   使用的是Django的（authentication）认证框架。 没有写注册功能（因为根本不需要） 没有写登出（好像也不需要）  Django拥有一个内置的认证（authentication）框架用来操作用户认证（a">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15223978300797.jpg">
+<meta property="article:published_time" content="2018-03-30T07:07:48.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.982Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="Django,python">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/15223978300797.jpg">
+
+<link rel="canonical" href="https://fanquqi.github.io/2018/03/30/Django%E7%99%BB%E5%BD%95%E9%AA%8C%E8%AF%81/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Django登录验证 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2018/03/30/Django%E7%99%BB%E5%BD%95%E9%AA%8C%E8%AF%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Django登录验证
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-03-30 15:07:48" itemprop="dateCreated datePublished" datetime="2018-03-30T15:07:48+08:00">2018-03-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/develop/" itemprop="url" rel="index"><span itemprop="name">develop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>之前开发的一套后台报表系统，现在页面越来越多，又搞了个内网域名，有的时候会被安全部的检查攻击，所以必须搞一个登录验证的功能。说起来也好写。因为毕竟Django有整套的解决方案。</p>
+</blockquote>
+<ul>
+<li>使用的是Django的（authentication）认证框架。</li>
+<li>没有写注册功能（因为根本不需要）</li>
+<li>没有写登出（好像也不需要）</li>
+</ul>
+<p>Django拥有一个内置的认证（authentication）框架用来操作用户认证（authentication），会话（sessions），权限（permissions）以及用户组。这个认证（authentication）系统包含了一些普通用户的操作视图（views），例如：登录，登出，修改密码以及重置密码。</p>
+<p>（authentication）框架位于django.contrib.auth，被其他Django的contrib包调用。所以我们只需要学会怎么使用。</p>
+<p>这个认证（authentication）系统还包含了以下模型（models）：</p>
+<ul>
+<li>User：一个包含了基础字段的用户模型（model）；这个模型（model）的主要字段有：username， password, email, first_name, last_name, is_active。</li>
+<li>Group：一个组模型（model）用来分类用户</li>
+<li>Permission：执行特定操作的标识<br>这个框架还包含默认的认证（authentication）视图（views）和表单（forms），我们之后会用到。<br>所以之后的工作可能还会涉及到权限认证，也要使用这个框架（到时候再说，反正都是我一个人搞🙄🙄）</li>
+</ul>
+<h2 id="开始accounts应用"><a href="#开始accounts应用" class="headerlink" title="开始accounts应用"></a>开始accounts应用</h2><p>新建一个应用取名<code>accounts</code>,（注意因为用到Django的登录框架所以取名稍微规范一点）</p>
+<pre><code>django-admin startapp accounts</code></pre><p>在工程目录<code>settings.py</code> 的<code>INSTALLED_APPS</code> 中添加<code>accounts</code>APP </p>
+<pre><code>INSTALLED_APPS = (
+    &apos;account&apos;,
+    # ...
+)</code></pre><p>执行migrate同步应用models到数据库。</p>
+<pre><code>python manage.py migrate</code></pre><h2 id="Forms表单"><a href="#Forms表单" class="headerlink" title="Forms表单"></a>Forms表单</h2><p>在<code>accounts</code>下面新建一个<code>forms.py</code>, 写入以下内容</p>
+<pre><code>#-*- coding: UTF-8 -*-
+from django import forms
+
+class LoginForm(forms.Form):
+    username = forms.CharField(label=&quot;用户名&quot;,
+                    max_length=&quot;20&quot;)
+    password = forms.CharField(label=&quot;密码&quot;, 
+                    max_length=&quot;20&quot;,widget=forms.PasswordInput)</code></pre><p>请注意我们使用PasswordInput控件来渲染HTML的<code>Input</code>元素。它包含<code>type=&quot;password&quot;</code>属性，不用再定义。</p>
+<h2 id="views视图"><a href="#views视图" class="headerlink" title="views视图"></a>views视图</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">from django.http import HttpResponse</span><br><span class="line">from django.shortcuts import render</span><br><span class="line">from django.contrib.auth import authenticate, login</span><br><span class="line">from .forms import LoginForm</span><br><span class="line">from django.contrib.auth.decorators import login_required</span><br><span class="line">from django.http import HttpResponseRedirect</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def user_login(request):</span><br><span class="line">    if request.method &#x3D;&#x3D; &#39;POST&#39;:</span><br><span class="line">        form &#x3D; LoginForm(request.POST)</span><br><span class="line">        if form.is_valid():</span><br><span class="line">            cd &#x3D; form.cleaned_data</span><br><span class="line">            user &#x3D; authenticate(username&#x3D;cd[&#39;username&#39;],</span><br><span class="line">                                password&#x3D;cd[&#39;password&#39;])</span><br><span class="line">            if user is not None:</span><br><span class="line">                if user.is_active:</span><br><span class="line">                    login(request, user)</span><br><span class="line">                    #return HttpResponse(&#39;Authenticated successfully&#39;)</span><br><span class="line">                    return HttpResponseRedirect(&#39;&#x2F;accounts&#x2F;dashboard&#39;)</span><br><span class="line">                else:</span><br><span class="line">                    return HttpResponse(&#39;Disabled accounts&#39;)</span><br><span class="line">            else:</span><br><span class="line">                return HttpResponse(&#39;Invalid login&#39;)</span><br><span class="line">    else:</span><br><span class="line">        form &#x3D; LoginForm()</span><br><span class="line">    return render(request, &#39;accounts&#x2F;login.html&#39;, &#123;&#39;form&#39;: form&#125;)</span><br><span class="line">    </span><br><span class="line">@login_required</span><br><span class="line">def dashboard(request):</span><br><span class="line">    pass</span><br><span class="line">    return render(request,</span><br><span class="line">              &#39;accounts&#x2F;dashboard.html&#39;,</span><br><span class="line">              &#123;&#39;section&#39;: &#39;dashboard&#39;&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>解读一下以上内容。<br>login_in函数：<br>当一个<code>GET</code>请求调用user_login函数的时候。会直接实例化一个登录表单呈现给用户。<br>当用户<code>POST</code>提交这个表单的时候：</p>
+<ol>
+<li>通过使用<code>form=LoginForm（request.POST）</code>使用用户提交的数据实例化form</li>
+<li>检查form是否有效</li>
+<li>使用<code>authenticate()</code>方法，通过数据库对这个用户进行验证，验证通过，通过<code>login()</code>方法集合用户到session中,并重定向到一个初始页面，没有通过，返回<code>Invalid login</code></li>
+</ol>
+<p>dashboard函数之后会提到。</p>
+<h2 id="accounts的urls-py"><a href="#accounts的urls-py" class="headerlink" title="accounts的urls.py"></a>accounts的urls.py</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">from django.conf.urls import url</span><br><span class="line">from . import views</span><br><span class="line"></span><br><span class="line">urlpatterns &#x3D; [</span><br><span class="line">    # post views</span><br><span class="line">    url(r&#39;^dashboard$&#39;, views.dashboard, name&#x3D;&#39;dashboard&#39;),</span><br><span class="line">    url(r&#39;^login&#x2F;$&#39;, views.user_login, name&#x3D;&#39;login&#39;),</span><br><span class="line"></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>注册了两个url /login为登录页，dashboard为初始页。</p>
+<h2 id="settings文件"><a href="#settings文件" class="headerlink" title="settings文件"></a>settings文件</h2><p>添加了两行，</p>
+<ul>
+<li>LOGIN_REDIRECT_URL：告诉Django用户登录成功后如果contrib.auth.views.login视图（view）没有获取到next参数将会默认重定向到哪个URL。</li>
+<li>LOGIN_URL：重定向用户登录的URL（例如：使用login_required装饰器（decorator））。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">LOGIN_REDIRECT_URL &#x3D; &#39;&#x2F;accounts&#x2F;dashboard&#39;</span><br><span class="line">LOGIN_URL &#x3D; reverse_lazy(&#39;login&#39;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="前端页面"><a href="#前端页面" class="headerlink" title="前端页面"></a>前端页面</h2><p>accounts-base.html</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&#123;% load staticfiles %&#125;</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">    &lt;head&gt;</span><br><span class="line"></span><br><span class="line">        &lt;meta charset&#x3D;&quot;UTF-8&quot;&gt;</span><br><span class="line">        &lt;title&gt;&#123;% block title %&#125;&#123;% endblock %&#125;&lt;&#x2F;title&gt;</span><br><span class="line">        &lt;script src&#x3D;&quot;&#x2F;static&#x2F;bootstrap-table-master&#x2F;docs&#x2F;assets&#x2F;js&#x2F;jquery.min.js&quot;&gt;&lt;&#x2F;script&gt;</span><br><span class="line">        &lt;script src&#x3D;&quot;&#x2F;static&#x2F;bootstrap-3.3.7&#x2F;docs&#x2F;dist&#x2F;js&#x2F;bootstrap.min.js&quot;&gt;&lt;&#x2F;script&gt;</span><br><span class="line">        &lt;link href&#x3D;&quot;&#123;% static &quot;&#x2F;static&#x2F;css&#x2F;base.css&quot; %&#125;&quot; rel&#x3D;&quot;stylesheet&quot;&gt;</span><br><span class="line"></span><br><span class="line">    &lt;&#x2F;head&gt;</span><br><span class="line"></span><br><span class="line">    &lt;body&gt;</span><br><span class="line">        &lt;div id&#x3D;&quot;header&quot;&gt;</span><br><span class="line">          &lt;h1 class&#x3D;&quot;page-header&quot;&gt;&lt;span class&#x3D;&quot;glyphicon glyphicon-user&quot;&gt;&lt;&#x2F;span&gt; 用户登录&lt;&#x2F;h1&gt;</span><br><span class="line">        &lt;&#x2F;div&gt;</span><br><span class="line">        &lt;div id&#x3D;&quot;content&quot;&gt;</span><br><span class="line">            &#123;% block content %&#125;</span><br><span class="line">            &#123;% endblock %&#125;</span><br><span class="line">        &lt;&#x2F;div&gt;</span><br><span class="line">    &lt;&#x2F;body&gt;</span><br><span class="line">&lt;&#x2F;html&gt;</span><br></pre></td></tr></table></figure>
+
+<p>accounts/login.html</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#123;% extends &quot;account-base.html&quot; %&#125;</span><br><span class="line">&#123;% block title %&#125;Log-in&#123;% endblock %&#125;</span><br><span class="line">&#123;% block content %&#125;</span><br><span class="line">    &lt;div class&#x3D;&quot;container&quot;&gt;</span><br><span class="line"></span><br><span class="line">    &lt;form class&#x3D;&quot;form-line&quot; action&#x3D;&quot;.&quot; method&#x3D;&quot;post&quot;&gt;</span><br><span class="line">        &#123;&#123; form.as_p &#125;&#125;</span><br><span class="line">        &#123;% csrf_token %&#125;</span><br><span class="line">        &lt;div  class&#x3D;&quot;form-group&quot;&gt;</span><br><span class="line">            &lt;div class&#x3D;&quot;col-md-5&quot;&gt;</span><br><span class="line">                &lt;input type&#x3D;&quot;submit&quot; class&#x3D;&quot;btn btn-primary btn-block&quot; value&#x3D;&quot;登录&quot; widget&#x3D;&quot;40&quot;&gt;</span><br><span class="line">            &lt;&#x2F;div&gt;</span><br><span class="line">        &lt;&#x2F;div&gt;</span><br><span class="line">    &lt;&#x2F;form&gt;</span><br><span class="line">    &lt;&#x2F;div&gt;</span><br><span class="line">&#123;% endblock %&#125;</span><br></pre></td></tr></table></figure>
+
+<p>base.css<br>忽略了。。自己可以找些好看的样式。</p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>我们把之前相关的页面函数都加个<code>login_required装饰器</code>就可以了。如果没有登录直接访问这个页面就会重定向到登录页面。完美。</p>
+<p>上一张登录页图片，哈哈<br> <img src="http://or2jd66dq.bkt.clouddn.com/15223978300797.jpg" alt=""></p>
+<p>参考：<br><a href="https://www.jianshu.com/p/6aab901fefd3">form表单设置标签样式</a><br><a href="https://www.jianshu.com/p/05810d38f93a">Django By Example翻译</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/Django-python/" rel="tag"># Django,python</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2018/03/20/tcpdump-wireshark%E6%8A%93%E5%8C%85%E5%88%86%E6%9E%90/" rel="prev" title="tcpdump+wireshark抓包分析">
+      <i class="fa fa-chevron-left"></i> tcpdump+wireshark抓包分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2018/04/02/golang%E7%AC%94%E8%AE%B0/" rel="next" title="golang笔记">
+      golang笔记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#开始accounts应用"><span class="nav-number">1.</span> <span class="nav-text">开始accounts应用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Forms表单"><span class="nav-number">2.</span> <span class="nav-text">Forms表单</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#views视图"><span class="nav-number">3.</span> <span class="nav-text">views视图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#accounts的urls-py"><span class="nav-number">4.</span> <span class="nav-text">accounts的urls.py</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#settings文件"><span class="nav-number">5.</span> <span class="nav-text">settings文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#前端页面"><span class="nav-number">6.</span> <span class="nav-text">前端页面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后"><span class="nav-number">7.</span> <span class="nav-text">最后</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

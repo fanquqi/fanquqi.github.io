@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="场景描述 今天有个开发哥哥来找我。说有个医生信息表被删除了（测试服）但是现在版本正在测试，账号已经登不上了，bug群里已经有人说话了，CTO已经看到了，情况已经很紧急了。但是我之前也没有遇到过这类事情，而且测试服mysql是不备份的，一时不知道要怎么办。 解决但是 事情还是要解决也总是有解决办法。下边按照先后顺序记录了下我的操作方案。 方案一 使用bin-log，我们测试服mysql是有记录mys">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql误删除表恢复">
+<meta property="og:url" content="https://fanquqi.github.io/2017/08/04/mysql%E8%AF%AF%E5%88%A0%E9%99%A4%E8%A1%A8%E6%81%A2%E5%A4%8D/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="场景描述 今天有个开发哥哥来找我。说有个医生信息表被删除了（测试服）但是现在版本正在测试，账号已经登不上了，bug群里已经有人说话了，CTO已经看到了，情况已经很紧急了。但是我之前也没有遇到过这类事情，而且测试服mysql是不备份的，一时不知道要怎么办。 解决但是 事情还是要解决也总是有解决办法。下边按照先后顺序记录了下我的操作方案。 方案一 使用bin-log，我们测试服mysql是有记录mys">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/binlog-error.png">
+<meta property="article:published_time" content="2017-08-04T09:12:09.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.997Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/binlog-error.png">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/08/04/mysql%E8%AF%AF%E5%88%A0%E9%99%A4%E8%A1%A8%E6%81%A2%E5%A4%8D/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>mysql误删除表恢复 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/08/04/mysql%E8%AF%AF%E5%88%A0%E9%99%A4%E8%A1%A8%E6%81%A2%E5%A4%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          mysql误删除表恢复
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-08-04 17:12:09" itemprop="dateCreated datePublished" datetime="2017-08-04T17:12:09+08:00">2017-08-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="场景描述"><a href="#场景描述" class="headerlink" title="场景描述"></a>场景描述</h1><p> 今天有个开发哥哥来找我。说有个医生信息表被删除了（测试服）但是现在版本正在测试，账号已经登不上了，bug群里已经有人说话了，CTO已经看到了，情况已经很紧急了。但是我之前也没有遇到过这类事情，而且测试服mysql是不备份的，一时不知道要怎么办。</p>
+<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><p><strong>但是</strong> 事情还是要解决也总是有解决办法。下边按照先后顺序记录了下我的操作方案。</p>
+<h2 id="方案一"><a href="#方案一" class="headerlink" title="方案一"></a>方案一</h2><blockquote>
+<p>使用bin-log，我们测试服mysql是有记录mysql-binlog的，（本来也是没有开的，在六月份的时候测试服总是内存不够用，我把数据库从本地迁移独立了出来开启了bin-log）</p>
+</blockquote>
+<p><strong>bin-log恢复方案介绍</strong></p>
+<p>先查看这次今天mysql操作记录，发现没有什么操作，毕竟周五， 所以计划直接恢复到删表之前（就是昨天，中间操作的一段时间有几个今天修改的记录不见得情况），然后再从删表后的时间节点到现在恢复，等于只跳过了那条删表操作，别的操作都重新来一遍。</p>
+<h3 id="操作流程"><a href="#操作流程" class="headerlink" title="操作流程"></a>操作流程</h3><p>首先查看mysql-binlog 找到误操作drop table的时间节点 这里没有图文。。。</p>
+<pre><code>// 查找对应的bin-log文件
+mysqlbinlog mysql-bin.000002 | grep -A4 &quot;table_name&quot; </code></pre><p>然后恢复对应时间节点恢复（其实mysqlbinlog也可以对应postion节点恢复）<br>    mysqlbinlog -d test_medical –stop-datetime=’2017-08-03 17:57:05’ /home/mysql/3306/data/mysql-bin.000002 | mysql -uroot -p -P 3306 -S /home/mysql/3306/mysql.sock<br>    // -d 数据库名  –stop-datetime 结束时间点，–start-datetime 开始时间节点 二者可以一起写就是中间时间短的操作 </p>
+<p>可想而知我这样操作的结果，肯定是一堆冲突，因为当前数据库已经是操作过一遍的结果了，再把执行过得命令拿过来执行下，肯定是有错误。<br>所以我们方案一肯定是不可取的。</p>
+<p><img src="http://or2jd66dq.bkt.clouddn.com/binlog-error.png" alt=""></p>
+<h2 id="方案二"><a href="#方案二" class="headerlink" title="方案二"></a>方案二</h2><blockquote>
+<p>我之前是有迁移过这个MySQL的，我赶紧看了下迁移的数据压缩包还在时间是2017-6-19,顿时感觉欣喜若狂</p>
+</blockquote>
+<p>我的设想是这样的，因为时间久远肯定不能再这个mysql上恢复到一个多月之前，我想把数据包下到本地电脑mysql，恢复数据，把这个表的dump下来，传到测试服mysql。然后数据包压缩完之后有3G多 下载限速1M大约一个小时。<br>太久了。<br>我索性在测试数据库服务器上 用ansible由装了一个mysql实例端口3309用时两分钟不到。</p>
+<p>恢复数据 <a href="https://fanquqi.github.io/2017/06/16/%E5%87%A0%E7%A7%8Dmysql%E8%BF%81%E7%A7%BB/">参考文档</a></p>
+<p>然后用mysqlbinlog恢复这一个多月来的数据。</p>
+<pre><code>mysqlbinlog -d test_medical --stop-datetime=&apos;2017-08-03 17:57:05&apos; /home/mysql/3306/data/mysql-bin.000001 | mysql -uroot -p -P3309 -S /home/mysql/3309/mysql.sock
+
+mysqlbinlog -d test_medical --stop-datetime=&apos;2017-08-03 17:57:05&apos; /home/mysql/3306/data/mysql-bin.000002 | mysql -uroot -p -P3309 -S /home/mysql/3309/mysql.sock</code></pre><p>备份表</p>
+<pre><code>mysqldump -uroot -p test_medical table_name &gt; table_name.sql</code></pre><p>然后进到mysql source一下  结束。。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>binlog是结合备份来用的，其实我们这次恢复也算是 <code>备份—恢复</code>流程</p>
+<p>所以</p>
+<p>数据库备份很重要，</p>
+<p>数据库备份很重要，</p>
+<p>数据库备份很重要。 </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/08/02/MySQL%E9%97%AE%E9%A2%98%E6%9F%A5%E6%89%BE-%E7%8A%B6%E6%80%81%E6%9F%A5%E7%9C%8B/" rel="prev" title="MySQL问题查找,状态查看">
+      <i class="fa fa-chevron-left"></i> MySQL问题查找,状态查看
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/08/11/python%E7%88%AC%E8%99%AB%E4%B8%80-%E7%AE%80%E5%8D%95%E7%88%AC%E5%8F%96%E8%B1%86%E7%93%A3%E9%AB%98%E5%88%86%E7%94%B5%E5%BD%B1/" rel="next" title="python爬虫一,简单爬取豆瓣高分电影">
+      python爬虫一,简单爬取豆瓣高分电影 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#场景描述"><span class="nav-number">1.</span> <span class="nav-text">场景描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解决"><span class="nav-number">2.</span> <span class="nav-text">解决</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#方案一"><span class="nav-number">2.1.</span> <span class="nav-text">方案一</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#操作流程"><span class="nav-number">2.1.1.</span> <span class="nav-text">操作流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方案二"><span class="nav-number">2.2.</span> <span class="nav-text">方案二</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

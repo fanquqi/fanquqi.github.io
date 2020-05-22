@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="之前我写python脚本连接MySQL的时候会这样写（MySQLdb库） 12345678910111213141516171819202122232425262728293031323334def conn_mysql():    port &#x3D; 3306    host &#x3D; &quot;10.0.0.1&quot;    user &#x3D; &quot;fqq&quot;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python防止SQL注入">
+<meta property="og:url" content="https://fanquqi.github.io/2017/12/19/python%E9%98%B2%E6%AD%A2SQL%E6%B3%A8%E5%85%A5/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="之前我写python脚本连接MySQL的时候会这样写（MySQLdb库） 12345678910111213141516171819202122232425262728293031323334def conn_mysql():    port &#x3D; 3306    host &#x3D; &quot;10.0.0.1&quot;    user &#x3D; &quot;fqq&quot;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-12-19T02:50:46.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.005Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="python">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/12/19/python%E9%98%B2%E6%AD%A2SQL%E6%B3%A8%E5%85%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>python防止SQL注入 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/12/19/python%E9%98%B2%E6%AD%A2SQL%E6%B3%A8%E5%85%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          python防止SQL注入
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-12-19 10:50:46" itemprop="dateCreated datePublished" datetime="2017-12-19T10:50:46+08:00">2017-12-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>之前我写python脚本连接MySQL的时候会这样写（MySQLdb库）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">def conn_mysql():</span><br><span class="line">    port &#x3D; 3306</span><br><span class="line">    host &#x3D; &quot;10.0.0.1&quot;</span><br><span class="line">    user &#x3D; &quot;fqq&quot;</span><br><span class="line">    pass &#x3D; &quot;pass&quot;</span><br><span class="line">    dbname &#x3D; &quot;test&quot;</span><br><span class="line">    timeout &#x3D; 30 * 60</span><br><span class="line">    conn &#x3D; MySQLdb.connect(host&#x3D;host, user&#x3D;user, passwd&#x3D;pass,</span><br><span class="line">                           port&#x3D;port, db&#x3D;dbname, connect_timeout&#x3D;timeout,                                   </span><br><span class="line">                           charset&#x3D;&quot;utf8&quot;)</span><br><span class="line">    return conn</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def mysql_execute(conn, sql):</span><br><span class="line">    cur &#x3D; conn.cursor()</span><br><span class="line">    try:</span><br><span class="line">        cur.execute(sql)</span><br><span class="line">        conn.commit()</span><br><span class="line">    except:</span><br><span class="line">        conn.rollback()</span><br><span class="line">    if cur:</span><br><span class="line">        cur.close()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def close(conn):</span><br><span class="line">    if conn:</span><br><span class="line">        conn.close()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def insert_mysql(sql):</span><br><span class="line">    conn &#x3D; conn_mysql()</span><br><span class="line">    mysql_execute(conn, sql)</span><br><span class="line">    conn.close()</span><br></pre></td></tr></table></figure>
+
+<p>一直秉持了很久。但是最近发现还是有问题的。这样会有一些安全问题。如果在工程代码里是大忌。原谅我没有写过工程，对不起。</p>
+<p>那么，这样写到底问题出在哪里了？<br>需要看这个<a href="http://www.cnblogs.com/hkncd/archive/2012/03/31/2426274.html">blog</a></p>
+<p>这代码里无疑是使用<code>execute</code>方法去处理的SQL请求。</p>
+<p>然而<code>excute</code>正确的使用方法应该是</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Help on method execute in module MySQLdb.cursors:</span><br><span class="line"></span><br><span class="line">execute(self, query, args&#x3D;None) method of MySQLdb.cursors.Cursor instance</span><br><span class="line">    Execute a query.</span><br><span class="line"></span><br><span class="line">    query -- string, query to execute on server</span><br><span class="line">    args -- optional sequence or mapping, parameters to use with query.</span><br><span class="line"></span><br><span class="line">    Note: If args is a sequence, then %s must be used as the</span><br><span class="line">    parameter placeholder in the query. If a mapping is used,</span><br><span class="line">    %(key)s must be used as the placeholder.</span><br></pre></td></tr></table></figure>
+
+<p>有个参数<code>args</code>，默认是none，其实我们每次涉及到SQL拼接的时候都应该带上这个参数。这才是安全的。 </p>
+<p>所以需要修改两个函数</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line">def mysql_execute(conn, sql,args):</span><br><span class="line">    cur &#x3D; conn.cursor()</span><br><span class="line">    try:</span><br><span class="line">        cur.execute(sql,args)</span><br><span class="line">        conn.commit()</span><br><span class="line">    except:</span><br><span class="line">        conn.rollback()</span><br><span class="line">    if cur:</span><br><span class="line">        cur.close()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def insert_mysql(sql):</span><br><span class="line">    conn &#x3D; conn_mysql()</span><br><span class="line">    mysql_execute(conn, sql,args)</span><br><span class="line">    conn.close()</span><br></pre></td></tr></table></figure>
+
+<p>调用方式如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">args &#x3D; (id, name)</span><br><span class="line">cur.execute(&#39;select id,name from user where id &#x3D; %s and name &#x3D; %s&#39;, args )</span><br></pre></td></tr></table></figure>
+
+<p>但是这样的话<code>select</code>后边的字段名不能用占位符替代，只能是<code>where</code>后面的变量 不过没有太大关系。</p>
+<p>顺便说说 防止SQL注入的策略：</p>
+<ul>
+<li>可以对用户输入内容进行判断，关键词进行筛选</li>
+<li>数据库权限隔离</li>
+<li>后端代码预防</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/python/" rel="tag"># python</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/12/18/%E4%BD%BF%E7%94%A8parted%E7%BB%99%E7%A1%AC%E7%9B%98%E5%88%86%E5%8C%BA/" rel="prev" title="使用parted给硬盘分区">
+      <i class="fa fa-chevron-left"></i> 使用parted给硬盘分区
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2018/01/16/bootstrap-bootstrap-table%E7%AC%94%E8%AE%B0/" rel="next" title="bootstrap-bootstrap-table笔记">
+      bootstrap-bootstrap-table笔记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

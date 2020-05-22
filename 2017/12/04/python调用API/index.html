@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="API是Application Programming Interface（应用程序界面）的缩写.很多服务或者软件都有提供，并提供相应的使用文档。我们可以使用这些HTTP API来进行增删改查。  如果你也是个系统运维，我相信你可能目前为止没有尝试过服务器后端开发，没有用flask或者Django框架做过开发，但是你肯定听说过或者使用过RESTful API。 再如果你现在公司使用的是open-">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python调用API">
+<meta property="og:url" content="https://fanquqi.github.io/2017/12/04/python%E8%B0%83%E7%94%A8API/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="API是Application Programming Interface（应用程序界面）的缩写.很多服务或者软件都有提供，并提供相应的使用文档。我们可以使用这些HTTP API来进行增删改查。  如果你也是个系统运维，我相信你可能目前为止没有尝试过服务器后端开发，没有用flask或者Django框架做过开发，但是你肯定听说过或者使用过RESTful API。 再如果你现在公司使用的是open-">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15123764582022.jpg">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/15123765006158.jpg">
+<meta property="article:published_time" content="2017-12-04T03:27:25.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:04.004Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="python,API">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/15123764582022.jpg">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/12/04/python%E8%B0%83%E7%94%A8API/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>python调用API | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/12/04/python%E8%B0%83%E7%94%A8API/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          python调用API
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-12-04 11:27:25" itemprop="dateCreated datePublished" datetime="2017-12-04T11:27:25+08:00">2017-12-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:04" itemprop="dateModified" datetime="2020-05-21T20:56:04+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>API是Application Programming Interface（应用程序界面）的缩写.很多服务或者软件都有提供，并提供相应的使用文档。我们可以使用这些<code>HTTP API</code>来进行增删改查。</p>
+</blockquote>
+<p>如果你也是个系统运维，我相信你可能目前为止没有尝试过服务器后端开发，没有用<code>flask</code>或者<code>Django</code>框架做过开发，但是你肯定听说过或者使用过<code>RESTful API</code>。</p>
+<p>再如果你现在公司使用的是open-falcon，上传监控数据的时候都需要去调用API，或者falcon-plus，都可以通过API去添加报警，更改策略等。。</p>
+<p>强烈建议下载<code>postman</code>来调试<br><img src="http://or2jd66dq.bkt.clouddn.com/15123764582022.jpg" alt=""></p>
+<p>代码查看，有多中语言包括shell,PHP，Java，go，python<br><img src="http://or2jd66dq.bkt.clouddn.com/15123765006158.jpg" alt=""></p>
+<p>以上postman的代码可以直接使用。。requests 用起来很顺手。<br>但是。<br>下边。。<br>我们以python2的urllib2库 为例分别以各种场景记录下。。</p>
+<h2 id="GET-请求"><a href="#GET-请求" class="headerlink" title="GET 请求"></a>GET 请求</h2><p>最简单的例子. urllib2.urlopen(url[, data][, timeout]) 参数URL 既可以为字符创url也可以是一个request对象。</p>
+<pre><code>import urllib2
+response = urllib2.urlopen(&apos;http://python.org/&apos;)
+html = response.read()
+
+或者
+
+import urllib2
+req = urllib2.Request(&apos;http://python.org/&apos;)
+response = urllib2.urlopen(req)
+the_page = response.read()</code></pre><p>第二个例子用到了urllib.Reauest类，只用URL实例化了对象。</p>
+<p><strong>添加header</strong><br>一般HTTP请求提交数据，需要编码成 URL编码格式，然后做为url的一部分，或者作为参数传到Request对象中。</p>
+<pre><code>import urllib2
+req = urllib2.Request(&apos;http://www.example.com/&apos;)
+req.add_header(&apos;Referer&apos;, &apos;http://www.python.org/&apos;)
+r = urllib2.urlopen(req)</code></pre><p>在实例化Request类之后使用add_header 方法添加header。上面例子添加了一个Referer，说明我们的访问是从<a href="http://www.python.org过来的。其他的header">http://www.python.org过来的。其他的header</a> 类似user-agent， 都可以调用<code>add_header(key,value)</code>方法添加.</p>
+<p><strong>用户名密码登录验证</strong></p>
+<p>用户在登录之后，服务器端会为该用户创建一个Session。Session相当于该用户的档案。该档案就代表着该用户。<br>那么某一次访问请求是属于该用户呢？登录的时候服务器要求浏览器储存了一个Session ID的Cookie值。每一个访问都带上了该Cookie。服务器将Cookie中的Session ID与服务器中的Session ID比对就知道该请求来自哪个用户了。<a href="http://blog.csdn.net/fangaoxin/article/details/6952954/">具体参考</a><br>我们在调用urllib2.urlopen(url)的时候，其实urllib2在open函数内部创建了一个默认的opener对象。然后调用opener.open()函数。但是默认opener不支持cookie。<br>我们需要使用<code>HTTPCookieProcessor</code></p>
+<p>以下一个模拟登录zabbix的例子</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">import urllib2</span><br><span class="line">import cookielib</span><br><span class="line">import urllib</span><br><span class="line"></span><br><span class="line">#定义登录地址</span><br><span class="line">login_url &#x3D; &#39;http:&#x2F;&#x2F;10.16.2.4&#x2F;zabbix&#x2F;index.php&#39;</span><br><span class="line">#定义登录所需要用的信息，如用户名、密码等，详见下图，使用urllib进行编码</span><br><span class="line"></span><br><span class="line">login_data &#x3D; urllib.urlencode(&#123;</span><br><span class="line">                        &quot;name&quot;: &#39;admin&#39;,</span><br><span class="line">                        &quot;password&quot;: &#39;password&#39;,</span><br><span class="line">                        &quot;autologin&quot;: 1,</span><br><span class="line">                        &quot;enter&quot;: &quot;Sign in&quot;&#125;)</span><br><span class="line"></span><br><span class="line">#设置一个cookie处理器，它负责从服务器下载cookie到本地，并且在发送请求时带上本地的cookie  </span><br><span class="line">cj &#x3D; cookielib.CookieJar() #获取Cookiejar对象（存在本机的cookie消息）</span><br><span class="line">opener &#x3D; urllib2.build_opener(urllib2.HTTPCookieProcessor(cj)) #自定义opener,并将opener跟CookieJar对象绑定</span><br><span class="line">urllib2.install_opener(opener) #安装opener,此后调用urlopen()时都会使用安装过的opener对象</span><br><span class="line">response&#x3D;opener.open(login_url,login_data).read() #访问登录页，自动带着cookie信息</span><br><span class="line">print response #返回登陆后的页面源代码</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="POST请求"><a href="#POST请求" class="headerlink" title="POST请求"></a>POST请求</h2><p>还是使用Request类，将参数放置到data中，data是一个字典，里面要匹配键值对。</p>
+<pre><code>headers = {&apos;Content-Type&apos;: &apos;application/json&apos;}
+params = {&apos;username&apos;: &quot;username&quot;, &apos;password&apos;: &quot;password&quot;}
+data = json.dumps(params)
+req = urllib2.Request(url, data, headers)  #POST</code></pre><blockquote>
+<p>Content-Length: 144： 是指发送的表单数据长度为144，也就是字符个数是144个。<br>X-Requested-With: XMLHttpRequest ：表示Ajax异步请求。<br>Content-Type: application/x-www-form-urlencoded ： 表示浏览器提交 Web 表单时使用，表单数据会按照 name1=value1&amp;name2=value2 键值对形式进行编码。</p>
+</blockquote>
+<h2 id="代理proxy"><a href="#代理proxy" class="headerlink" title="代理proxy"></a>代理proxy</h2><p>如果你想要去爬取1024上的图片的话，兄弟你可能需要设置代理。</p>
+<p><a href="http://www.xicidaili.com/">西刺免费代理IP</a><br><a href="http://www.goubanjia.com/free/index.shtml">全网代理IP</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">import urllib2</span><br><span class="line">import random</span><br><span class="line"></span><br><span class="line">proxy_list &#x3D; [</span><br><span class="line">    &#123;&quot;http&quot; : &quot;124.88.67.81:80&quot;&#125;,</span><br><span class="line">    &#123;&quot;http&quot; : &quot;124.88.67.82:80&quot;&#125;,</span><br><span class="line">    &#123;&quot;http&quot; : &quot;124.88.67.83:80&quot;&#125;,</span><br><span class="line">    &#123;&quot;http&quot; : &quot;124.88.67.84:80&quot;&#125;,</span><br><span class="line">    &#123;&quot;http&quot; : &quot;124.88.67.85:80&quot;&#125;</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"># 随机选择一个代理</span><br><span class="line">proxy &#x3D; random.choice(proxy_list)</span><br><span class="line"># 使用选择的代理构建代理处理器对象</span><br><span class="line">httpproxy_handler &#x3D; urllib2.ProxyHandler(proxy)</span><br><span class="line"></span><br><span class="line">opener &#x3D; urllib2.build_opener(httpproxy_handler)</span><br><span class="line"></span><br><span class="line">request &#x3D; urllib2.Request(&quot;http:&#x2F;&#x2F;www.baidu.com&#x2F;&quot;)</span><br><span class="line">response &#x3D; opener.open(request)</span><br><span class="line">print response.read()</span><br></pre></td></tr></table></figure>
+
+<p>如果是自己花钱买的有密码的代理</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">import urllib2</span><br><span class="line">import urllib</span><br><span class="line"></span><br><span class="line"># 私密代理授权的账户</span><br><span class="line">user &#x3D; &quot;mr_mao_hacker&quot;</span><br><span class="line"># 私密代理授权的密码</span><br><span class="line">passwd &#x3D; &quot;sffqry9r&quot;</span><br><span class="line"># 私密代理 IP</span><br><span class="line">proxyserver &#x3D; &quot;61.158.163.130:16816&quot;</span><br><span class="line"></span><br><span class="line"># 1. 构建一个密码管理对象，用来保存需要处理的用户名和密码</span><br><span class="line">passwdmgr &#x3D; urllib2.HTTPPasswordMgrWithDefaultRealm()</span><br><span class="line"></span><br><span class="line"># 2. 添加账户信息，第一个参数realm是与远程服务器相关的域信息，一般没人管它都是写None，后面三个参数分别是 代理服务器、用户名、密码</span><br><span class="line">passwdmgr.add_password(None, proxyserver, user, passwd)</span><br><span class="line"></span><br><span class="line"># 3. 构建一个代理基础用户名&#x2F;密码验证的ProxyBasicAuthHandler处理器对象，参数是创建的密码管理对象</span><br><span class="line">#   注意，这里不再使用普通ProxyHandler类了</span><br><span class="line"></span><br><span class="line">proxyauth_handler &#x3D; urllib2.ProxyBasicAuthHandler(passwdmgr)</span><br><span class="line"></span><br><span class="line"># 4. 通过 build_opener()方法使用这些代理Handler对象，创建自定义opener对象，参数包括构建的 proxy_handler 和 proxyauth_handler</span><br><span class="line">opener &#x3D; urllib2.build_opener(proxyauth_handler)</span><br><span class="line"></span><br><span class="line"># 5. 构造Request 请求</span><br><span class="line">request &#x3D; urllib2.Request(&quot;http:&#x2F;&#x2F;www.baidu.com&#x2F;&quot;)</span><br><span class="line"></span><br><span class="line"># 6. 使用自定义opener发送请求</span><br><span class="line">response &#x3D; opener.open(request)</span><br><span class="line"></span><br><span class="line"># 7. 打印响应内容</span><br><span class="line">print response.read()</span><br></pre></td></tr></table></figure>
+
+<p>如果你使用的shadowsocket,解决方案有两个，</p>
+<ol>
+<li>把ss设置成全局模式再跑脚本。</li>
+<li><a href="https://www.thinksaas.cn/group/topic/518333/">看这里</a></li>
+</ol>
+<p><strong>结束语：</strong><br>puthon3 Requests模块更好用。。。 <a href="http://fuandenghuo.com/2017/08/23/Requests-%E6%A8%A1%E5%9D%97/">参考</a></p>
+<p>参考：<a href="http://www.jianshu.com/p/02bda3bc14d4?utm_campaign=maleskine&utm_content=note&utm_medium=pc_all_hots&utm_source=recommendation">Handler处理器 和 自定义Opener</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/python-API/" rel="tag"># python,API</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/11/27/curl%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/" rel="prev" title="curl使用指南">
+      <i class="fa fa-chevron-left"></i> curl使用指南
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/12/12/Django%E6%A8%A1%E6%9D%BF/" rel="next" title="Django模板">
+      Django模板 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#GET-请求"><span class="nav-number">1.</span> <span class="nav-text">GET 请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#POST请求"><span class="nav-number">2.</span> <span class="nav-text">POST请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代理proxy"><span class="nav-number">3.</span> <span class="nav-text">代理proxy</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+
+
+<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="kafka集群越来越多，每次问题出来了很挠头，并不能第一时间定位到问题，也没有多少有效数据，所以对整个集群状态做个有效的记录是十分必要的。所以选择用jmxtrans+influxdb+grafana这三个开源组件做个监控。jmxtrans通过JMX(Java Management Extensions)收集每个kafka实例监控数据，把数据导入到influxDB，然后再grafana集中展示，展">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka流量监控">
+<meta property="og:url" content="https://fanquqi.github.io/2017/09/26/kafka%E6%B5%81%E9%87%8F%E7%9B%91%E6%8E%A7/index.html">
+<meta property="og:site_name" content="fix u dream">
+<meta property="og:description" content="kafka集群越来越多，每次问题出来了很挠头，并不能第一时间定位到问题，也没有多少有效数据，所以对整个集群状态做个有效的记录是十分必要的。所以选择用jmxtrans+influxdb+grafana这三个开源组件做个监控。jmxtrans通过JMX(Java Management Extensions)收集每个kafka实例监控数据，把数据导入到influxDB，然后再grafana集中展示，展">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/influx_web.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/kafka_grafana_peizhi.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/kafka_flow_grafana_1.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/kafka_flow_grafana_2.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/kafka_flow_grafana_3.png">
+<meta property="og:image" content="http://or2jd66dq.bkt.clouddn.com/kafka_flow_baobiao.png">
+<meta property="article:published_time" content="2017-09-26T08:17:35.000Z">
+<meta property="article:modified_time" content="2020-05-21T12:56:03.993Z">
+<meta property="article:author" content="fanquqi">
+<meta property="article:tag" content="kafka">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://or2jd66dq.bkt.clouddn.com/influx_web.png">
+
+<link rel="canonical" href="https://fanquqi.github.io/2017/09/26/kafka%E6%B5%81%E9%87%8F%E7%9B%91%E6%8E%A7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>kafka流量监控 | fix u dream</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="fanquqi.github.io/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">fix u dream</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="fanquqi.github.io/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="fanquqi.github.io/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/09/26/kafka%E6%B5%81%E9%87%8F%E7%9B%91%E6%8E%A7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="name" content="fanquqi">
+      <meta itemprop="description" content="Raise my flag to the new age.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="fix u dream">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          kafka流量监控
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-09-26 16:17:35" itemprop="dateCreated datePublished" datetime="2017-09-26T16:17:35+08:00">2017-09-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-21 20:56:03" itemprop="dateModified" datetime="2020-05-21T20:56:03+08:00">2020-05-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="fanquqi.github.io/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>kafka集群越来越多，每次问题出来了很挠头，并不能第一时间定位到问题，也没有多少有效数据，所以对整个集群状态做个有效的记录是十分必要的。<br>所以选择用<code>jmxtrans</code>+<code>influxdb</code>+<code>grafana</code>这三个开源组件做个监控。jmxtrans通过JMX(Java Management Extensions)收集每个kafka实例监控数据，把数据导入到influxDB，然后再grafana集中展示，展示的时候可以按照broker或者集群。</p>
+</blockquote>
+<h1 id="influxdb安装"><a href="#influxdb安装" class="headerlink" title="influxdb安装"></a>influxdb安装</h1><blockquote>
+<p>截止到2017-09-26 16:17:35 influxdb已经更新到V1.3.5,但是新的版本改动很大把<code>Web Admin Interface</code>取消了。都融合到了<code>Chronograf</code>,功能似乎是增强了，但是，，<code>Chronograf</code>需要独立安装，而且，，<code>Chronograf</code>安装时似乎还要依赖<code>Kapacitor</code>,<code>Telegraf</code>，我不知道这是不是捆绑经营，所以我选择装之前版本，本来还想拥抱最新版的，看起来现在不是时候。</p>
+</blockquote>
+<p><strong>V1.2.0安装过程</strong></p>
+<pre><code>wget http://dl.influxdata.com/influxdb/releases/influxdb-1.2.0.x86_64.rpm
+yum install influxdb-1.2.0.x86_64.rpm
+service influxdb start</code></pre><p>修改 /etc/influxdb/influxdb.conf</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[admin]</span><br><span class="line"> 		# Determines whether the admin service is enabled.</span><br><span class="line">  		enabled &#x3D; true</span><br><span class="line"></span><br><span class="line"> 		# The default bind address used by the admin service.</span><br><span class="line">  		bind-address &#x3D; &quot;:8083&quot;</span><br></pre></td></tr></table></figure>
+
+<p>influx 用户<code>root</code> 默认密码 <code>root</code><br>修改密码</p>
+<p>  SET PASSWORD FOR root = ‘root’</p>
+<p>后面的初始化我们可以到<code>http://localhost:8083</code>完成。还可以借助旁边<code>Query Template</code></p>
+<p>比如创建用户<br><img src="http://or2jd66dq.bkt.clouddn.com/influx_web.png" alt=""><br>    CREATE USER “root” WITH PASSWORD ‘123456’ WITH ALL PRIVILEGES</p>
+<p>新建库<br>    CREATE DATABASE “db_name”</p>
+<h1 id="grafana安装"><a href="#grafana安装" class="headerlink" title="grafana安装"></a>grafana安装</h1><blockquote>
+<p>grafana必须最新版</p>
+</blockquote>
+<pre><code>wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-4.5.2-1.x86_64.rpm
+yum install grafana-4.5.2-1.x86_64.rpm
+service grafana start</code></pre><p>配置DataSource<br><img src="http://or2jd66dq.bkt.clouddn.com/kafka_grafana_peizhi.png" alt=""></p>
+<p>记得把admin用户禁用或者改密码，依稀还记得之前公司请了个白帽子扫公司环境，就是因为grafana默认端口，admin用户还是用的默认密码，我们小米监控数据图都在grafana上，这令我一度十分尴尬。所以，禁用admin吧。。</p>
+<h1 id="jmxtrans安装"><a href="#jmxtrans安装" class="headerlink" title="jmxtrans安装"></a>jmxtrans安装</h1><pre><code>wget http://central.maven.org/maven2/org/jmxtrans/jmxtrans/266/jmxtrans-266.rpm
+yum install jmxtrans-266.rpm  
+/etc/init.d/jmxtrans start </code></pre><p>下面我们需要在<code>/var/lib/jmxtrans/</code>文件下增加json格式的配置文件,因为jmxtrans每次都是从这个目录读取json文件的。<br>参考<a href="https://github.com/jmxtrans/jmxtrans/wiki/InfluxDBWriter">influxDBwriter</a></p>
+<p>格式类似</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;servers&quot; : [ &#123;</span><br><span class="line">    &quot;port&quot; : &quot;1099&quot;,</span><br><span class="line">    &quot;host&quot; : &quot;w2&quot;,</span><br><span class="line">    &quot;queries&quot; : [ &#123;</span><br><span class="line">      &quot;obj&quot; : &quot;kafka.server:type&#x3D;BrokerTopicMetrics,name&#x3D;BytesInPerSec,topic&#x3D;*&quot;,</span><br><span class="line">      &quot;attr&quot; : [ &quot;HeapMemoryUsage&quot;, &quot;NonHeapMemoryUsage&quot; ],</span><br><span class="line">      &quot;resultAlias&quot;:&quot;jvmMemory&quot;,</span><br><span class="line">      &quot;outputWriters&quot; : [ &#123;</span><br><span class="line">        &quot;@class&quot; : &quot;com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory&quot;,</span><br><span class="line">        &quot;url&quot; : &quot;http:&#x2F;&#x2F;127.0.0.1:8086&#x2F;&quot;,</span><br><span class="line">        &quot;username&quot; : &quot;admin&quot;,</span><br><span class="line">        &quot;password&quot; : &quot;admin&quot;,</span><br><span class="line">        &quot;database&quot; : &quot;jmxDB&quot;,</span><br><span class="line">        &quot;tags&quot;     : &#123;&quot;application&quot; : &quot;kafka&quot;&#125;</span><br><span class="line">      &#125; ]</span><br><span class="line">    &#125; ]</span><br><span class="line">  &#125; ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对其中重要项目做一下解读：</p>
+<ul>
+<li>obj - 对应jmx的ObjectName，监控指标后面加上<code>topic=*</code>之后可以按照每个topic收集，否则不会</li>
+<li>resultAlias - This is used as the <code>measurement</code> container in the database(influxdb)相当于表名    </li>
+<li>tags - 对应InfluxDb的tag功能，对与存储在同一个MEASUREMENTS里面的不同监控指标可以做区分，相当于带索引的字段</li>
+</ul>
+<p>关于kafka jmx metrics 请移步<a href="http://kafka.apache.org/documentation.html#monitoring">官网传送门</a></p>
+<p>metrics采集参考<br><a href="https://blog.serverdensity.com/how-to-monitor-kafka/">https://blog.serverdensity.com/how-to-monitor-kafka/</a></p>
+<p>问题处理参考<br><a href="https://www.cloudera.com/documentation/kafka/latest/topics/kafka_metrics.html">https://www.cloudera.com/documentation/kafka/latest/topics/kafka_metrics.html</a></p>
+<h2 id="metric"><a href="#metric" class="headerlink" title="metric"></a>metric</h2><h3 id="集群状态相关"><a href="#集群状态相关" class="headerlink" title="集群状态相关"></a>集群状态相关</h3><ul>
+<li>kafka.server:type=ReplicaFetcherManager,name=MaxLag,clientId=Replica,topic=*    副本最大延时(message个数) </li>
+<li>kafka.server:type=ReplicaManager,name=UnderReplicatedPartitions                 不可用分区数 </li>
+<li>kafka.controller:type=KafkaController,name=ActiveControllerCount                leader of broker </li>
+<li>kafka.network: type=SocketServer, name=RequestHandlerAvgIdlePercent             请求平均处理率 </li>
+<li>kafka.server:type=ReplicaManager,name=PartitionCount                            partition数量 </li>
+<li>java.lang:type=Threading                                                        java线程数 </li>
+<li>java.lang:type=GarbageCollector,name=*                                          javaGC频率 </li>
+<li>java.lang:type=Memory                                                           Java内存使用情况 </li>
+</ul>
+<h3 id="网络流量相关"><a href="#网络流量相关" class="headerlink" title="网络流量相关"></a>网络流量相关</h3><ul>
+<li>kafka.network:type=RequestMetrics,name=RequestsPerSec,request=* </li>
+<li>kafka.network:type=RequestMetrics,name=TotalTimeMs,request=* </li>
+<li>kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec,topic=*       流入流量 </li>
+<li>kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec,topic=*      流出流量 </li>
+<li>kafka.server:type=BrokerTopicMetrics,name=BytesRejectedPerSec,topic=* 拒绝流量 </li>
+<li>kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*    流入消息量 </li>
+</ul>
+<p>最终效果图<br>可以加一些template变量，更方便查看<br><img src="http://or2jd66dq.bkt.clouddn.com/kafka_flow_grafana_1.png" alt=""><br><img src="http://or2jd66dq.bkt.clouddn.com/kafka_flow_grafana_2.png" alt=""><br><img src="http://or2jd66dq.bkt.clouddn.com/kafka_flow_grafana_3.png" alt=""><br>也可以自己制作一些报表<br><img src="http://or2jd66dq.bkt.clouddn.com/kafka_flow_baobiao.png" alt=""></p>
+<h1 id="问题发现及处理"><a href="#问题发现及处理" class="headerlink" title="问题发现及处理"></a>问题发现及处理</h1><h2 id="grafana绘图不完全的问题"><a href="#grafana绘图不完全的问题" class="headerlink" title="grafana绘图不完全的问题"></a>grafana绘图不完全的问题</h2><p><strong>问题描述：</strong></p>
+<p>当我绘制每个集群中所有Topic的流量图的时候，到一个比较大的集群的时候，会出现某个Topic显示不全这种情况。比如说集群中有300个Topic，当你group by的时候，只会显示几十个，但是当你在自己设置的变量中去特意选没有出现的Topic的时候，该Topic曲线也能被绘制出来。</p>
+<p><strong>问题分析：</strong></p>
+<p>我一度以为并深信这是grafana的问题，并试图去给grafana增加系统资源，到处搜索”grafana graph query limit”然而并没有什么结果，终于，几天之后当我展示最近30分钟的数据的时候，所有的Topic都被展示出来了，我才意识到这锅并不是grafana的，应该是influx的。然后去看了一下influxdb的配置文档，终于有所发现..</p>
+<p>在<code>influxdb.conf</code>中的[http]模块有个默认的配置<br>  max-row-limit = 10000<br>这条配置的意思是每次查询，最大返回一万条数据，我们每分钟一个点，一天的数据，几百个Topic，很容易就达到了也就是说七个Topic就回达到这个阈值，所以要把这个值改的大一点。如果改的特别大之后别忘了给influxdb增加一些系统资源，省的出问题。</p>
+<p>参考<br><a href="http://navyaijm.blog.51cto.com/4647068/1958376">http://navyaijm.blog.51cto.com/4647068/1958376</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="fanquqi.github.io/tags/kafka/" rel="tag"># kafka</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/09/12/kafka%E5%B8%B8%E7%94%A8%E6%93%8D%E4%BD%9C/" rel="prev" title="kafka常用操作">
+      <i class="fa fa-chevron-left"></i> kafka常用操作
+    </a></div>
+      <div class="post-nav-item">
+    <a href="fanquqi.github.io/2017/10/08/python%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%A0%BC%E5%BC%8F%E5%8C%96%E9%97%AE%E9%A2%98%E5%A4%84%E7%90%86/" rel="next" title="python字符串格式化问题">
+      python字符串格式化问题 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#influxdb安装"><span class="nav-number">1.</span> <span class="nav-text">influxdb安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#grafana安装"><span class="nav-number">2.</span> <span class="nav-text">grafana安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#jmxtrans安装"><span class="nav-number">3.</span> <span class="nav-text">jmxtrans安装</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#metric"><span class="nav-number">3.1.</span> <span class="nav-text">metric</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#集群状态相关"><span class="nav-number">3.1.1.</span> <span class="nav-text">集群状态相关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#网络流量相关"><span class="nav-number">3.1.2.</span> <span class="nav-text">网络流量相关</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#问题发现及处理"><span class="nav-number">4.</span> <span class="nav-text">问题发现及处理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#grafana绘图不完全的问题"><span class="nav-number">4.1.</span> <span class="nav-text">grafana绘图不完全的问题</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">fanquqi</p>
+  <div class="site-description" itemprop="description">Raise my flag to the new age.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="fanquqi.github.io/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">fanquqi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="fanquqi.github.io/js/utils.js"></script>
+
+<script src="fanquqi.github.io/js/motion.js"></script>
+
+
+<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="fanquqi.github.io/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
