@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 4.2.1">
-  <link rel="apple-touch-icon" sizes="180x180" href="fanquqi.github.io/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="fanquqi.github.io/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="fanquqi.github.io/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="fanquqi.github.io/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/fanquqi.github.io/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fanquqi.github.io/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/fanquqi.github.io/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/fanquqi.github.io/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="fanquqi.github.io/css/main.css">
+<link rel="stylesheet" href="/fanquqi.github.io/css/main.css">
 
 
-<link rel="stylesheet" href="fanquqi.github.io/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/fanquqi.github.io/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"fanquqi.github.io","root":"fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"fanquqi.github.io","root":"/fanquqi.github.io/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="随着自己工作年限的增加，工作中并不是一味的部署服务，应用简单的操作，有的时候需要进行下内核参数调优，在此做下记录。。 一般我们会通过sysctl来进行参数更改，有的时候也会使用echo直接写到文件中。其实效果都是一样的。 所有我们能更改的内核参数控制都在&#x2F;proc&#x2F;sys这个目录下，我们可以看到有fs,net,vm等，对应文件系统（filesystem），网络，虚拟内存等。而这些文件下边都是一些空">
@@ -94,7 +94,7 @@
 
   <div class="site-meta">
 
-    <a href="fanquqi.github.io/" class="brand" rel="start">
+    <a href="/fanquqi.github.io/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">fix u dream</h1>
       <span class="logo-line-after"><i></i></span>
@@ -114,12 +114,12 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="fanquqi.github.io/" rel="section"><i class="home fa-fw"></i>首页</a>
+    <a href="/fanquqi.github.io/" rel="section"><i class="home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="fanquqi.github.io/archives/" rel="section"><i class="archive fa-fw"></i>归档</a>
+    <a href="/fanquqi.github.io/archives/" rel="section"><i class="archive fa-fw"></i>归档</a>
 
   </li>
   </ul>
@@ -153,7 +153,7 @@
     <link itemprop="mainEntityOfPage" href="https://fanquqi.github.io/2017/06/17/%E5%86%85%E6%A0%B8%E5%8F%82%E6%95%B0%E4%BA%86%E8%A7%A3%E5%8F%8A%E4%BC%98%E5%8C%96/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="fanquqi.github.io/images/avatar.gif">
+      <meta itemprop="image" content="/fanquqi.github.io/images/avatar.gif">
       <meta itemprop="name" content="fanquqi">
       <meta itemprop="description" content="Raise my flag to the new age.">
     </span>
@@ -304,11 +304,11 @@ vm.dirty_expire_centisecs = 500</code></pre><p>以上的显示基本是默认值
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="fanquqi.github.io/2017/06/16/%E5%87%A0%E7%A7%8Dmysql%E8%BF%81%E7%A7%BB/" rel="prev" title="几种mysql迁移">
+    <a href="/fanquqi.github.io/2017/06/16/%E5%87%A0%E7%A7%8Dmysql%E8%BF%81%E7%A7%BB/" rel="prev" title="几种mysql迁移">
       <i class="fa fa-chevron-left"></i> 几种mysql迁移
     </a></div>
       <div class="post-nav-item">
-    <a href="fanquqi.github.io/2017/06/21/%E6%95%88%E7%8E%87%E7%A5%9E%E5%99%A8Alfred%E4%BD%BF%E7%94%A8/" rel="next" title="效率神器Alfred使用">
+    <a href="/fanquqi.github.io/2017/06/21/%E6%95%88%E7%8E%87%E7%A5%9E%E5%99%A8Alfred%E4%BD%BF%E7%94%A8/" rel="next" title="效率神器Alfred使用">
       效率神器Alfred使用 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -381,7 +381,7 @@ vm.dirty_expire_centisecs = 500</code></pre><p>以上的显示基本是默认值
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="fanquqi.github.io/archives/">
+          <a href="/fanquqi.github.io/archives/">
         
           <span class="site-state-item-count">73</span>
           <span class="site-state-item-name">日志</span>
@@ -442,19 +442,19 @@ vm.dirty_expire_centisecs = 500</code></pre><p>以上的显示基本是默认值
   </div>
 
   
-  <script src="fanquqi.github.io/lib/anime.min.js"></script>
-  <script src="fanquqi.github.io/lib/velocity/velocity.min.js"></script>
-  <script src="fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/fanquqi.github.io/lib/anime.min.js"></script>
+  <script src="/fanquqi.github.io/lib/velocity/velocity.min.js"></script>
+  <script src="/fanquqi.github.io/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="fanquqi.github.io/js/utils.js"></script>
+<script src="/fanquqi.github.io/js/utils.js"></script>
 
-<script src="fanquqi.github.io/js/motion.js"></script>
-
-
-<script src="fanquqi.github.io/js/schemes/muse.js"></script>
+<script src="/fanquqi.github.io/js/motion.js"></script>
 
 
-<script src="fanquqi.github.io/js/next-boot.js"></script>
+<script src="/fanquqi.github.io/js/schemes/muse.js"></script>
+
+
+<script src="/fanquqi.github.io/js/next-boot.js"></script>
 
 
 
